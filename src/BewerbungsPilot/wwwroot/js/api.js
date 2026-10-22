@@ -31,6 +31,16 @@ async function request(method, url, body) {
 
 export const api = {
   getApplications: () => request('GET', '/api/applications'),
-  getApplication: (id) => request('GET', `/api/applications/${id}`),
+  getApplication: (id) => request('GET', `/api/applications/${id}`), // → { application, events }
   createApplication: (input) => request('POST', '/api/applications', input),
+  updateApplication: (id, input) => request('PUT', `/api/applications/${id}`, input),
+  deleteApplication: (id) => request('DELETE', `/api/applications/${id}`),
+
+  findDuplicates: (companyName, position, excludeId) => {
+    const query = new URLSearchParams({ companyName, position });
+    if (excludeId) query.set('excludeId', excludeId);
+    return request('GET', `/api/applications/duplicates?${query}`);
+  },
+
+  getDashboard: () => request('GET', '/api/dashboard'),
 };

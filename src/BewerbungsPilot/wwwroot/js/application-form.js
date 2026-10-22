@@ -1,10 +1,12 @@
-// Create dialog for an application. Built once and reused.
+// Create/edit dialog for an application. Built once and reused.
 
 import { api, ApiError } from './api.js';
-import { STATUSES, escapeHtml, setButtonSaving, setButtonSaved, resetButton, wait } from './ui.js';
+import { STATUSES, escapeHtml, statusLabel, formatDateTime, setButtonSaving, setButtonSaved, resetButton, wait } from './ui.js';
 
 let dialog;
 let onSavedCallback;
+let editingId = null;          // null = create, number = edit
+let confirmedDuplicateKey = null; // company|position the user already chose to save anyway
 
 function buildDialog() {
   dialog = document.createElement('dialog');
@@ -27,6 +29,7 @@ function buildDialog() {
       </div>
       <div class="dialog-body">
         <div class="form-alert" role="alert" data-form-alert></div>
+        <div class="form-warning" role="alert" data-duplicate-warning hidden></div>
         <div class="form-grid">
           ${field('companyName', 'Unternehmen', '<input class="input" id="f-companyName" name="companyName" autocomplete="organization" aria-required="true">', true)}
           ${field('position', 'Position', '<input class="input" id="f-position" name="position" aria-required="true">', true)}
@@ -47,7 +50,11 @@ function buildDialog() {
   document.body.append(dialog);
 
   dialog.querySelectorAll('[data-close]').forEach((b) => b.addEventListener('click', () => dialog.close()));
-  dialog.querySelector('form').addEventListener('submit', handleSubmit);
+  const form = dialog.querySelector('form');
+  form.addEventListener('submit', handleSubmit);
+  // Changing company or position invalidates an earlier "save anyway" decision.
+  form.elements.companyName.addEventListener('input', hideDuplicateWarning);
+  form.elements.position.addEventListener('input', hideDuplicateWarning);
 }
 
 function field(name, label, control, required = false, full = false) {
@@ -76,6 +83,13 @@ function readForm(form) {
   };
 }
 
+function fillForm(form, application) {
+  for (const name of ['companyName', 'position', 'location', 'jobUrl', 'deadline', 'appliedOn', 'notes']) {
+    form.elements[name].value = application?.[name] ?? '';
+  }
+  form.elements.status.value = application?.status ?? 'Entwurf';
+}
+
 function clearErrors() {
   dialog.querySelector('[data-form-alert]').textContent = '';
   dialog.querySelectorAll('.field').forEach((f) => {
@@ -101,15 +115,62 @@ function showErrors(error) {
   else dialog.querySelector('[data-form-alert]').textContent = error.message;
 }
 
+// ---------- Duplicate warning ----------
+
+function duplicateKey(input) {
+  return `${input.companyName ?? ''}|${input.position ?? ''}`.toLowerCase();
+}
+
+function showDuplicateWarning(duplicates) {
+  const box = dialog.querySelector('[data-duplicate-warning]');
+  const items = duplicates.map((d) =>
+    `<li>${escapeHtml(d.companyName)} – ${escapeHtml(d.position)} <span class="muted">(${escapeHtml(statusLabel(d.status))}, angelegt am ${formatDateTime(d.createdAt)})</span></li>`).join('');
+  box.innerHTML = `
+    <strong>Mögliche doppelte Bewerbung</strong>
+    <p>Für dieses Unternehmen und diese Position gibt es bereits ${duplicates.length === 1 ? 'eine Bewerbung' : `${duplicates.length} Bewerbungen`}:</p>
+    <ul>${items}</ul>
+    <p>Prüfen Sie die Angaben. Sie können trotzdem speichern.</p>`;
+  box.hidden = false;
+  dialog.querySelector('[data-submit]').textContent = 'Trotzdem speichern';
+}
+
+function hideDuplicateWarning() {
+  const box = dialog.querySelector('[data-duplicate-warning]');
+  if (box.hidden) return;
+  box.hidden = true;
+  confirmedDuplicateKey = null;
+  dialog.querySelector('[data-submit]').textContent = 'Speichern';
+}
+
+// Returns true if saving should stop to show the duplicate warning first.
+async function mustWarnAboutDuplicates(input) {
+  if (!input.companyName || !input.position) return false; // server validation will complain
+  if (confirmedDuplicateKey === duplicateKey(input)) return false; // user already saw the warning
+
+  const duplicates = await api.findDuplicates(input.companyName, input.position, editingId);
+  if (duplicates.length === 0) return false;
+
+  showDuplicateWarning(duplicates);
+  confirmedDuplicateKey = duplicateKey(input);
+  return true;
+}
+
+// ---------- Saving ----------
+
 async function handleSubmit(event) {
   event.preventDefault();
   const form = event.target;
   const submit = form.querySelector('[data-submit]');
+  const input = readForm(form);
   clearErrors();
-  setButtonSaving(submit);
 
   try {
-    const saved = await api.createApplication(readForm(form));
+    if (await mustWarnAboutDuplicates(input)) return;
+
+    setButtonSaving(submit);
+    const saved = editingId === null
+      ? await api.createApplication(input)
+      : (await api.updateApplication(editingId, input)).application;
     setButtonSaved(submit);
     await wait(650);
     dialog.close();
@@ -118,17 +179,28 @@ async function handleSubmit(event) {
     if (error instanceof ApiError) showErrors(error);
     else throw error;
   } finally {
-    resetButton(submit);
+    if (submit.disabled) resetButton(submit);
   }
 }
 
-export function openApplicationForm({ onSaved } = {}) {
+// Opens the dialog. Pass `application` to edit it, leave it out to create a new one.
+// `onSaved` receives the saved application.
+export function openApplicationForm({ application = null, onSaved } = {}) {
   if (!dialog) buildDialog();
   onSavedCallback = onSaved;
+  editingId = application?.id ?? null;
+  confirmedDuplicateKey = null;
 
   const form = dialog.querySelector('form');
   form.reset();
+  fillForm(form, application);
   clearErrors();
+  hideDuplicateWarning();
+  const submit = form.querySelector('[data-submit]');
+  submit.dataset.label = 'Speichern';
+  resetButton(submit);
+  dialog.querySelector('#application-form-title').textContent = application ? 'Bewerbung bearbeiten' : 'Neue Bewerbung';
+
   dialog.showModal();
   form.elements.companyName.focus();
 }

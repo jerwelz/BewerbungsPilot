@@ -18,6 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // --- Services (business logic) ---
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ApplicationService>();
+builder.Services.AddScoped<DashboardService>();
 
 // Send enums as text ("Beworben") instead of numbers in JSON.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -32,10 +33,11 @@ using (var scope = app.Services.CreateScope())
 }
 
 // --- Frontend: static files from wwwroot ---
-app.MapGet("/", () => Results.Redirect("/bewerbungen.html"));
+app.UseDefaultFiles(); // "/" serves index.html (the dashboard)
 app.UseStaticFiles();
 
 // --- API ---
 app.MapApplicationEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();

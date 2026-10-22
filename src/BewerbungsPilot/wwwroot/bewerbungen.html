@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bewerbungen · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/css/app.css">
   <script type="module" src="/js/applications.js"></script>
 </head>
@@ -15,7 +16,7 @@
       <header class="page-header">
         <div>
           <h1 class="page-title">Bewerbungen</h1>
-          <p class="page-subtitle" id="application-count">Wird geladen …</p>
+          <p class="page-subtitle" id="application-count" aria-live="polite">Wird geladen …</p>
         </div>
         <button class="btn btn-primary" type="button" id="new-application">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
@@ -24,7 +25,40 @@
         </button>
       </header>
 
-      <section class="card" id="application-list" aria-live="polite"></section>
+      <div class="toolbar" role="search">
+        <div class="search-field">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <label for="filter-search" class="visually-hidden">Suchen</label>
+          <input class="input" id="filter-search" type="search" placeholder="Unternehmen, Position oder Ort suchen" autocomplete="off">
+        </div>
+
+        <label for="filter-status" class="visually-hidden">Status</label>
+        <select class="select" id="filter-status">
+          <option value="">Alle Status</option>
+        </select>
+
+        <label for="filter-period" class="visually-hidden">Bewerbungsdatum</label>
+        <select class="select" id="filter-period">
+          <option value="">Beworben: jederzeit</option>
+          <option value="7">Beworben: letzte 7 Tage</option>
+          <option value="30">Beworben: letzte 30 Tage</option>
+          <option value="90">Beworben: letzte 90 Tage</option>
+          <option value="none">Noch nicht beworben</option>
+        </select>
+
+        <label for="filter-sort" class="visually-hidden">Sortierung</label>
+        <select class="select" id="filter-sort">
+          <option value="newest">Neueste zuerst</option>
+          <option value="oldest">Älteste zuerst</option>
+          <option value="company">Unternehmen (A–Z)</option>
+          <option value="deadline">Frist (nächste zuerst)</option>
+        </select>
+
+        <button class="btn btn-ghost" type="button" id="filter-reset" hidden>Filter zurücksetzen</button>
+      </div>
+
+      <section class="card" id="application-list"></section>
     </main>
   </div>
 </body>

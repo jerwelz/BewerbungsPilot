@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Übersicht · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/lib/chart.umd.min.js" defer></script>
+  <script type="module" src="/js/dashboard.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Übersicht</h1>
+          <p class="page-subtitle" id="dashboard-date"></p>
+        </div>
+        <button class="btn btn-primary" type="button" id="new-application">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+            stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Neue Bewerbung
+        </button>
+      </header>
+
+      <div class="form-alert" id="dashboard-error" role="alert"></div>
+
+      <section class="kpi-grid" aria-label="Kennzahlen" id="kpis"></section>
+
+      <div class="dashboard-grid">
+        <section class="card chart-card chart-card-wide" aria-labelledby="activity-title">
+          <header class="card-header">
+            <h2 class="card-title" id="activity-title">Bewerbungsaktivität</h2>
+            <p class="card-subtitle">Versendete Bewerbungen pro Monat (nach Bewerbungsdatum)</p>
+          </header>
+          <div class="chart-box" id="activity-box">
+            <canvas id="activity-chart" role="img" aria-label="Balkendiagramm der versendeten Bewerbungen pro Monat"></canvas>
+          </div>
+        </section>
+
+        <section class="card chart-card" aria-labelledby="status-title">
+          <header class="card-header">
+            <h2 class="card-title" id="status-title">Statusverteilung</h2>
+            <p class="card-subtitle" id="response-rate"></p>
+          </header>
+          <div class="status-chart" id="status-box">
+            <div class="chart-box chart-box-doughnut">
+              <canvas id="status-chart" role="img" aria-label="Ringdiagramm der Statusverteilung"></canvas>
+            </div>
+            <ul class="chart-legend" id="status-legend"></ul>
+          </div>
+        </section>
+      </div>
+
+      <section class="card" aria-labelledby="recent-title">
+        <header class="card-header">
+          <h2 class="card-title" id="recent-title">Letzte Aktivitäten</h2>
+        </header>
+        <ol class="activity-list" id="recent-activity"></ol>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

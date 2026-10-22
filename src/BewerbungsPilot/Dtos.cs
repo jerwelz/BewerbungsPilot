@@ -36,3 +36,40 @@ public record ApplicationResponse(
         a.Id, a.CompanyName, a.Position, a.Location, a.JobUrl, a.Deadline, a.AppliedOn,
         a.Status, a.Notes, a.CreatedAt, a.UpdatedAt, a.StatusChangedAt);
 }
+
+// Detail view: the application plus its history.
+public record ApplicationDetailResponse(ApplicationResponse Application, List<EventResponse> Events)
+{
+    public static ApplicationDetailResponse FromEntity(JobApplication a) => new(
+        ApplicationResponse.FromEntity(a),
+        a.Events.Select(e => new EventResponse(e.Id, e.Type, e.FromStatus, e.ToStatus, e.Description, e.OccurredAt)).ToList());
+}
+
+public record EventResponse(
+    int Id, EventType Type, ApplicationStatus? FromStatus, ApplicationStatus? ToStatus,
+    string Description, DateTime OccurredAt);
+
+// Short info about a possible duplicate, shown in the warning.
+public record DuplicateResponse(int Id, string CompanyName, string Position, ApplicationStatus Status, DateTime CreatedAt);
+
+// ---------- Dashboard ----------
+
+public record DashboardResponse(
+    int Total,
+    int Drafts,
+    int InProgress,
+    int Interviews,
+    int Offers,
+    int Rejections,
+    int? ResponseRatePercent, // null when nothing has been submitted yet
+    List<StatusCount> StatusDistribution,
+    List<MonthCount> MonthlyActivity,
+    List<ActivityItem> RecentActivity);
+
+public record StatusCount(ApplicationStatus Status, int Count, int? Percent);
+
+public record MonthCount(int Year, int Month, int Count);
+
+public record ActivityItem(
+    int ApplicationId, string CompanyName, string Position,
+    EventType Type, string Description, DateTime OccurredAt);

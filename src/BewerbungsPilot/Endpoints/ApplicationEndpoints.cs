@@ -12,7 +12,10 @@ public static class ApplicationEndpoints
 
         group.MapGet("/", GetAll);
         group.MapGet("/{id:int}", GetById);
+        group.MapGet("/duplicates", FindDuplicates);
         group.MapPost("/", Create);
+        group.MapPut("/{id:int}", Update);
+        group.MapDelete("/{id:int}", Delete);
     }
 
     // GET /api/applications
@@ -22,13 +25,22 @@ public static class ApplicationEndpoints
         return Results.Ok(applications.Select(ApplicationResponse.FromEntity));
     }
 
-    // GET /api/applications/5
+    // GET /api/applications/5   → application + history
     private static async Task<IResult> GetById(int id, ApplicationService service)
     {
         var application = await service.GetByIdAsync(id);
         return application is null
-            ? Results.NotFound()
-            : Results.Ok(ApplicationResponse.FromEntity(application));
+            ? NotFound()
+            : Results.Ok(ApplicationDetailResponse.FromEntity(application));
+    }
+
+    // GET /api/applications/duplicates?companyName=...&position=...&excludeId=5
+    private static async Task<IResult> FindDuplicates(
+        string? companyName, string? position, int? excludeId, ApplicationService service)
+    {
+        var duplicates = await service.FindDuplicatesAsync(companyName, position, excludeId);
+        return Results.Ok(duplicates.Select(d =>
+            new DuplicateResponse(d.Id, d.CompanyName, d.Position, d.Status, d.CreatedAt)));
     }
 
     // POST /api/applications   (JSON body = ApplicationInput)
@@ -41,4 +53,28 @@ public static class ApplicationEndpoints
         var created = await service.CreateAsync(input);
         return Results.Created($"/api/applications/{created.Id}", ApplicationResponse.FromEntity(created));
     }
+
+    // PUT /api/applications/5   (JSON body = ApplicationInput)
+    private static async Task<IResult> Update(int id, ApplicationInput input, ApplicationService service)
+    {
+        var errors = service.Validate(input);
+        if (errors.Count > 0)
+            return Results.ValidationProblem(errors, title: "Bitte prüfen Sie Ihre Eingaben.");
+
+        var updated = await service.UpdateAsync(id, input);
+        return updated is null
+            ? NotFound()
+            : Results.Ok(ApplicationDetailResponse.FromEntity(updated));
+    }
+
+    // DELETE /api/applications/5
+    private static async Task<IResult> Delete(int id, ApplicationService service)
+    {
+        var deleted = await service.DeleteAsync(id);
+        return deleted ? Results.NoContent() : NotFound();
+    }
+
+    private static IResult NotFound() =>
+        Results.Problem(title: "Diese Bewerbung wurde nicht gefunden. Möglicherweise wurde sie bereits gelöscht.",
+            statusCode: StatusCodes.Status404NotFound);
 }

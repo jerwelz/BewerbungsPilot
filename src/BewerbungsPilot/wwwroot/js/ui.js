@@ -36,6 +36,50 @@ export function formatDate(isoDate) {
   return dateFormat.format(new Date(year, month - 1, day));
 }
 
+const dateTimeFormat = new Intl.DateTimeFormat('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
+
+// "2026-10-22T11:44:41Z" (UTC timestamp from the API) → "22.10.2026, 13:44" in local time
+export function formatDateTime(isoTimestamp) {
+  return isoTimestamp ? dateTimeFormat.format(new Date(isoTimestamp)) : '–';
+}
+
+// Today as "YYYY-MM-DD" in local time – the same format the API uses for dates.
+export function todayIso() {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+}
+
+// ---------- Confirmation dialog ----------
+
+// Shows a modal question. Resolves to true only if the user clicks the confirm button.
+// "Abbrechen" has the initial focus, so pressing Enter by accident never deletes anything.
+export function confirmDialog({ title, message, confirmLabel, danger = false }) {
+  return new Promise((resolve) => {
+    const dialog = document.createElement('dialog');
+    dialog.className = 'dialog dialog-sm';
+    dialog.setAttribute('aria-labelledby', 'confirm-title');
+    dialog.setAttribute('aria-describedby', 'confirm-message');
+    dialog.innerHTML = `
+      <form method="dialog">
+        <div class="dialog-body">
+          <h2 class="dialog-title" id="confirm-title">${escapeHtml(title)}</h2>
+          <p class="dialog-text" id="confirm-message">${escapeHtml(message)}</p>
+        </div>
+        <div class="dialog-footer">
+          <button class="btn btn-secondary" value="cancel" autofocus>Abbrechen</button>
+          <button class="btn ${danger ? 'btn-danger' : 'btn-primary'}" value="confirm">${escapeHtml(confirmLabel)}</button>
+        </div>
+      </form>`;
+    document.body.append(dialog);
+
+    dialog.addEventListener('close', () => {
+      resolve(dialog.returnValue === 'confirm');
+      setTimeout(() => dialog.remove(), 300); // let the closing transition finish
+    });
+    dialog.showModal();
+  });
+}
+
 // ---------- Sidebar ----------
 
 const ICONS = {
@@ -46,7 +90,7 @@ const ICONS = {
 };
 
 const NAV_ITEMS = [
-  { key: 'overview', label: 'Übersicht', href: '/index.html', ready: false },
+  { key: 'overview', label: 'Übersicht', href: '/', ready: true },
   { key: 'applications', label: 'Bewerbungen', href: '/bewerbungen.html', ready: true },
   { key: 'pipeline', label: 'Pipeline', href: '/pipeline.html', ready: false },
   { key: 'schedule', label: 'Termine & Fristen', href: '/termine.html', ready: false },
