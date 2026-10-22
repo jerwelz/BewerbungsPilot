@@ -25,6 +25,8 @@ builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<DocumentService>();
 builder.Services.AddScoped<InterviewService>();
 builder.Services.AddScoped<ScheduleService>();
+builder.Services.AddScoped<TimelineService>();
+builder.Services.AddScoped<WaitingQueueService>();
 
 // Send enums as text ("Beworben") instead of numbers in JSON.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -47,5 +49,6 @@ app.MapApplicationEndpoints();
 app.MapDashboardEndpoints();
 app.MapDocumentEndpoints();
 app.MapInterviewEndpoints();
+app.MapTimelineEndpoints();
 
 app.Run();

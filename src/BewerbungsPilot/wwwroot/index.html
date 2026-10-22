@@ -67,13 +67,28 @@
           <ol class="activity-list" id="upcoming-events"></ol>
         </section>
 
-        <section class="card" aria-labelledby="recent-title">
-          <header class="card-header">
-            <h2 class="card-title" id="recent-title">Letzte Aktivitäten</h2>
+        <section class="card" aria-labelledby="waiting-title">
+          <header class="card-header card-header-row">
+            <div>
+              <h2 class="card-title" id="waiting-title">Wartende Bewerbungen</h2>
+              <p class="card-subtitle" id="waiting-subtitle"></p>
+            </div>
+            <div class="segmented" role="group" aria-label="Wartezeit messen">
+              <button type="button" class="segmented-btn" data-waiting-sort="SinceSubmission" aria-pressed="true">Seit Bewerbung</button>
+              <button type="button" class="segmented-btn" data-waiting-sort="SinceStatusChange" aria-pressed="false">Seit Statuswechsel</button>
+            </div>
           </header>
-          <ol class="activity-list" id="recent-activity"></ol>
+          <ol class="activity-list" id="waiting-list"></ol>
+          <p class="card-footer-link" id="waiting-more" hidden><a class="card-link" href="/verlauf.html">Alle Verläufe ansehen</a></p>
         </section>
       </div>
+
+      <section class="card" aria-labelledby="recent-title">
+        <header class="card-header">
+          <h2 class="card-title" id="recent-title">Letzte Aktivitäten</h2>
+        </header>
+        <ol class="activity-list" id="recent-activity"></ol>
+      </section>
     </main>
   </div>
 </body>

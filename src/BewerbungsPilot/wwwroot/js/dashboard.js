@@ -3,7 +3,7 @@
 
 import { api } from './api.js';
 import {
-  renderSidebar, statusLabel, escapeHtml, formatDateTime, showToast, formatDate, formatTime, statePill, labelOf, INTERVIEW_TYPES,
+  renderSidebar, statusLabel, statusBadge, escapeHtml, formatDateTime, showToast, formatDate, formatTime, statePill, labelOf, INTERVIEW_TYPES,
 } from './ui.js';
 import { dateBlock } from './schedule-tab.js';
 import { openApplicationForm } from './application-form.js';
@@ -43,10 +43,81 @@ async function loadDashboard() {
     renderStatusChart(data);
     renderUpcoming(upcoming);
     renderRecentActivity(data.recentActivity);
+    await loadWaiting();
   } catch (error) {
     document.getElementById('dashboard-error').textContent = `Die Übersicht konnte nicht geladen werden: ${error.message}`;
   }
 }
+
+// ---------- Waiting queue (GET /api/waiting, sorted on the server) ----------
+// Two different measurements – always labeled as what they are. Neither one says
+// anything about what the employer is doing.
+
+const WAITING_LIMIT = 6;
+let waitingSort = 'SinceSubmission';
+
+const WAITING_SUBTITLE = {
+  SinceSubmission: 'Tage seit Ihrem eingetragenen Bewerbungsdatum · offene Bewerbungen',
+  SinceStatusChange: 'Tage seit dem zuletzt in BewerbungsPilot erfassten Statuswechsel',
+};
+
+const days = (n) => (n === 1 ? '1 Tag' : `${n} Tagen`);
+
+async function loadWaiting() {
+  const list = document.getElementById('waiting-list');
+  document.getElementById('waiting-subtitle').textContent = WAITING_SUBTITLE[waitingSort];
+  document.querySelectorAll('[data-waiting-sort]').forEach((b) =>
+    b.setAttribute('aria-pressed', String(b.dataset.waitingSort === waitingSort)));
+
+  let items;
+  try {
+    items = await api.getWaiting(waitingSort);
+  } catch (error) {
+    list.innerHTML = `<li class="activity-empty">Wartende Bewerbungen konnten nicht geladen werden: ${escapeHtml(error.message)}</li>`;
+    return;
+  }
+
+  document.getElementById('waiting-more').hidden = items.length <= WAITING_LIMIT;
+  if (items.length === 0) {
+    list.innerHTML = `<li class="activity-empty">Keine offenen Bewerbungen. Hier erscheinen versendete Bewerbungen
+      (Beworben, In Prüfung, Vorstellungsgespräch), solange kein Angebot und keine Absage eingetragen ist.</li>`;
+    return;
+  }
+
+  list.innerHTML = items.slice(0, WAITING_LIMIT).map((item) => {
+    const primary = waitingSort === 'SinceSubmission' ? item.daysSinceSubmission : item.daysSinceStatusChange;
+    const missing = waitingSort === 'SinceSubmission' ? 'Bewerbungsdatum fehlt' : 'Kein Statuswechsel erfasst';
+    const submission = item.daysSinceSubmission === null
+      ? 'Bewerbungsdatum fehlt'
+      : `Bewerbung vor ${days(item.daysSinceSubmission)} (${formatDate(item.appliedOn)})`;
+    const change = item.daysSinceStatusChange === null
+      ? 'kein Statuswechsel erfasst'
+      : `Status zuletzt erfasst vor ${days(item.daysSinceStatusChange)}`;
+    const label = primary === null ? missing : `${primary} ${primary === 1 ? 'Tag' : 'Tage'}`;
+
+    return `
+      <li>
+        <a class="activity-item waiting-item" href="/bewerbungen.html?id=${item.id}" aria-label="${escapeHtml(item.companyName)}: ${label}">
+          <span class="waiting-days${primary === null ? ' is-missing' : ''}" aria-hidden="true">
+            <strong>${primary ?? '–'}</strong><span>${primary === null ? 'k. A.' : primary === 1 ? 'Tag' : 'Tage'}</span>
+          </span>
+          <span class="activity-main">
+            <span class="activity-text">${escapeHtml(item.companyName)}</span>
+            <span class="activity-meta">${escapeHtml(item.position)}</span>
+            ${primary === null ? `<span class="activity-meta waiting-missing">${missing}</span>` : ''}
+            <span class="activity-meta">${waitingSort === 'SinceSubmission' ? change : submission}</span>
+          </span>
+          ${statusBadge(item.status)}
+        </a>
+      </li>`;
+  }).join('');
+}
+
+document.querySelectorAll('[data-waiting-sort]').forEach((button) =>
+  button.addEventListener('click', () => {
+    waitingSort = button.dataset.waitingSort;
+    loadWaiting();
+  }));
 
 // ---------- KPI cards ----------
 

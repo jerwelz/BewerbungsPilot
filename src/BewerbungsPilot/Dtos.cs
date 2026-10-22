@@ -109,6 +109,40 @@ public record EventResponse(
 // Short info about a possible duplicate, shown in the warning.
 public record DuplicateResponse(int Id, string CompanyName, string Position, ApplicationStatus Status, DateTime CreatedAt);
 
+// ---------- Verlauf (timeline) & waiting queue ----------
+// Deliberately compact: no notes, locations, contacts or documents.
+
+// All instants (Start, End, RecordedAt, GeneratedAt) are UTC recording times.
+// "…Day" values are days since the submission date (Day 0), null without AppliedOn.
+public record TimelineResponse(DateTime GeneratedAt, DateTime? RangeStart, DateTime? RangeEnd, List<JourneyResponse> Applications);
+
+public record JourneyResponse(
+    int Id, string CompanyName, string Position, ApplicationStatus CurrentStatus,
+    DateOnly? AppliedOn, DateOnly? Deadline, DateTime CreatedAt,
+    bool HistoryComplete,      // false: parts of the history were not recorded
+    bool StartsBeforeRange,    // the first segment began before the selected range
+    double? CurrentDay,        // "today" in days since submission
+    int? DeadlineDay,
+    List<StatusSegment> Segments,
+    List<TransitionMarker> Transitions,
+    List<InterviewMarker> Interviews);
+
+// Time in one recorded status. End = null: still the current status.
+// Uncertain = the start or the status itself could not be reconstructed exactly.
+public record StatusSegment(ApplicationStatus Status, DateTime Start, DateTime? End, bool Uncertain, double? StartDay, double? EndDay);
+
+// One recorded status entry. Initial = the status the application was created with.
+public record TransitionMarker(DateTime RecordedAt, ApplicationStatus? From, ApplicationStatus To, bool Backward, bool Initial, double? Day);
+
+// Interview appointment (local wall-clock time, like everywhere else).
+public record InterviewMarker(int Id, DateTime ScheduledAt, InterviewType Type, InterviewStatus Status, double? Day);
+
+public record WaitingItem(
+    int Id, string CompanyName, string Position, ApplicationStatus Status, DateOnly? AppliedOn,
+    int? DaysSinceSubmission,       // null: no submission date entered
+    DateTime? LastStatusChangeAt,   // UTC recording time of the last status entry
+    int? DaysSinceStatusChange);    // null: no recorded status entry
+
 // ---------- Dashboard ----------
 
 public record DashboardResponse(

@@ -60,6 +60,10 @@ export const api = {
   getCalendar: (from, to) => request('GET', `/api/calendar?from=${from}&to=${to}`), // "YYYY-MM-DD"
   getUpcoming: () => request('GET', '/api/calendar/upcoming'),
 
+  // from/to are optional "YYYY-MM-DD"
+  getTimeline: (from, to) => request('GET', from ? `/api/timeline?from=${from}&to=${to}` : '/api/timeline'),
+  getWaiting: (sort) => request('GET', `/api/waiting?sort=${sort}`), // SinceSubmission | SinceStatusChange
+
   previewUrl: (id) => `/api/documents/${id}/preview`,
   downloadUrl: (id) => `/api/documents/${id}/download`,
 };

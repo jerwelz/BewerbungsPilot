@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Verlauf · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/timeline.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Verlauf</h1>
+          <p class="page-subtitle">Erfasster Statusverlauf Ihrer Bewerbungen im Vergleich.</p>
+        </div>
+        <div class="segmented" role="group" aria-label="Zeitachse">
+          <button type="button" class="segmented-btn" data-mode="calendar" aria-pressed="true">Kalenderzeit</button>
+          <button type="button" class="segmented-btn" data-mode="day0" aria-pressed="false">Tage seit Bewerbung</button>
+        </div>
+      </header>
+
+      <div class="toolbar" role="search">
+        <div class="search-field">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <label for="tl-search" class="visually-hidden">Unternehmen oder Position suchen</label>
+          <input class="input" id="tl-search" type="search" placeholder="Unternehmen oder Position suchen" autocomplete="off">
+        </div>
+        <label for="tl-status" class="visually-hidden">Aktueller Status</label>
+        <select class="select" id="tl-status"><option value="">Alle Status</option></select>
+        <label for="tl-range" class="visually-hidden">Zeitraum</label>
+        <select class="select" id="tl-range">
+          <option value="all">Gesamter Verlauf</option>
+          <option value="30">Letzte 30 Tage</option>
+          <option value="90">Letzte 90 Tage</option>
+          <option value="365">Letzte 12 Monate</option>
+        </select>
+        <label for="tl-sort" class="visually-hidden">Sortierung</label>
+        <select class="select" id="tl-sort">
+          <option value="applied-desc">Bewerbungsdatum (neueste zuerst)</option>
+          <option value="applied-asc">Bewerbungsdatum (älteste zuerst)</option>
+          <option value="changed">Letzter Statuswechsel zuerst</option>
+          <option value="duration">Längster Verlauf zuerst</option>
+          <option value="company">Unternehmen (A–Z)</option>
+        </select>
+      </div>
+
+      <p class="tl-note" id="tl-note">
+        <strong>Erfasster Statusverlauf:</strong> Statuswechsel zeigen, wann Sie den Status in BewerbungsPilot
+        geändert haben – nicht, wann das Unternehmen gehandelt hat. Die Dauer je Status ist die Zeit bis zur
+        nächsten Erfassung.
+      </p>
+
+      <div class="tl-compare-bar" id="tl-compare-bar" hidden></div>
+      <p class="tl-notice" id="tl-notice" hidden></p>
+
+      <section class="card tl-card" aria-labelledby="tl-title">
+        <header class="card-header tl-card-header">
+          <h2 class="card-title" id="tl-title">Erfasster Statusverlauf</h2>
+          <ul class="tl-legend" id="tl-legend" aria-label="Legende"></ul>
+        </header>
+        <div class="tl-body" id="tl-body" aria-live="polite"></div>
+        <div class="tl-tooltip" id="tl-tooltip" role="tooltip" hidden></div>
+      </section>
+
+      <!-- Narrow screens: one card per application with a vertical chronology -->
+      <section class="journey-cards" id="journey-cards" aria-label="Bewerbungsverläufe"></section>
+
+      <section class="card tl-detail" id="tl-detail" aria-live="polite"></section>
+    </main>
+  </div>
+</body>
+</html>
