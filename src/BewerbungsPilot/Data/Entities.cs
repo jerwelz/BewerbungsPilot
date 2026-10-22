@@ -17,7 +17,17 @@ public enum EventType
     Created,
     StatusChanged,
     InterviewScheduled,
-    DocumentAdded
+    DocumentAdded,
+    DocumentDeleted
+}
+
+public enum DocumentCategory
+{
+    Lebenslauf,
+    Anschreiben,
+    Zeugnis,
+    Stellenanzeige,
+    Sonstiges
 }
 
 // One job application = one row in the "Applications" table.
@@ -39,6 +49,27 @@ public class JobApplication
 
     // Navigation property: all history entries belonging to this application (1:n).
     public List<ApplicationEvent> Events { get; set; } = new();
+
+    // Navigation property: all attached documents (1:n).
+    public List<ApplicationDocument> Documents { get; set; } = new();
+}
+
+// Metadata of one uploaded file. The file itself lives in storage/documents/
+// under StoredFileName – never under the original name, so two uploads called
+// "Lebenslauf.pdf" can never overwrite each other.
+public class ApplicationDocument
+{
+    public int Id { get; set; }
+    public int JobApplicationId { get; set; }          // foreign key
+    public JobApplication? JobApplication { get; set; } // navigation property
+
+    public DocumentCategory Category { get; set; }
+    public string OriginalFileName { get; set; } = ""; // shown to the user, used for downloads
+    public string StoredFileName { get; set; } = "";   // e.g. "3f2a…9c.pdf" (random GUID)
+    public string ContentType { get; set; } = "";
+    public long SizeBytes { get; set; }
+    public string Sha256 { get; set; } = "";           // fingerprint: proves the file is unchanged
+    public DateTime UploadedAt { get; set; }
 }
 
 // One entry in the history ("Verlauf") of an application.

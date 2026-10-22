@@ -5,6 +5,7 @@
 import { api } from './api.js';
 import { statusBadge, statusLabel, formatDate, formatDateTime, escapeHtml, showToast, confirmDialog } from './ui.js';
 import { openApplicationForm } from './application-form.js';
+import { documentsHtml, setUpDocumentsTab } from './documents.js';
 
 let panel;
 let current = null; // { application, events } currently shown
@@ -47,8 +48,8 @@ export async function openDetailPanel(id, { onChanged, onDeleted } = {}) {
   panel.querySelector('[data-close]').focus();
 }
 
-function render(activeTab) {
-  const { application: a, events } = current;
+function render(activeTab, highlightDocumentId) {
+  const { application: a, events, documents } = current;
 
   panel.innerHTML = `
     <header class="panel-header">
@@ -75,12 +76,16 @@ function render(activeTab) {
 
     <div class="tabs" role="tablist" aria-label="Bereiche">
       ${tabButton('overview', 'Überblick', activeTab)}
+      ${tabButton('documents', `Dokumente <span class="tab-count">${documents.length}</span>`, activeTab)}
       ${tabButton('history', `Verlauf <span class="tab-count">${events.length}</span>`, activeTab)}
     </div>
 
     <div class="panel-body">
       <section class="tab-panel" role="tabpanel" id="tab-overview" aria-labelledby="tab-btn-overview"${activeTab === 'overview' ? '' : ' hidden'}>
         ${overviewHtml(a)}
+      </section>
+      <section class="tab-panel" role="tabpanel" id="tab-documents" aria-labelledby="tab-btn-documents"${activeTab === 'documents' ? '' : ' hidden'}>
+        ${documentsHtml(documents, highlightDocumentId)}
       </section>
       <section class="tab-panel" role="tabpanel" id="tab-history" aria-labelledby="tab-btn-history"${activeTab === 'history' ? '' : ' hidden'}>
         ${historyHtml(events)}
@@ -91,6 +96,20 @@ function render(activeTab) {
   panel.querySelector('[data-edit]').addEventListener('click', editCurrent);
   panel.querySelector('[data-delete]').addEventListener('click', deleteCurrent);
   setUpTabs();
+  setUpDocumentsTab(panel.querySelector('#tab-documents'), a, documents, (highlightId) => reload('documents', highlightId));
+}
+
+// Reloads the application (e.g. after a document upload) and shows the given tab again.
+async function reload(activeTab, highlightDocumentId) {
+  try {
+    current = await api.getApplication(current.application.id);
+  } catch (error) {
+    showToast(error.message, 'error');
+    return;
+  }
+  render(activeTab, highlightDocumentId);
+  panel.querySelector(`#tab-btn-${activeTab}`)?.focus();
+  callbacks.onChanged?.(current.application);
 }
 
 function tabButton(key, label, activeTab) {
@@ -181,7 +200,7 @@ async function deleteCurrent() {
   const a = current.application;
   const confirmed = await confirmDialog({
     title: 'Bewerbung löschen?',
-    message: `Die Bewerbung bei „${a.companyName}" (${a.position}) wird mit ihrem gesamten Verlauf dauerhaft gelöscht. Dieser Schritt kann nicht rückgängig gemacht werden.`,
+    message: `Die Bewerbung bei „${a.companyName}" (${a.position}) wird mit ihrem gesamten Verlauf und allen Dokumenten dauerhaft gelöscht. Dieser Schritt kann nicht rückgängig gemacht werden.`,
     confirmLabel: 'Endgültig löschen',
     danger: true,
   });

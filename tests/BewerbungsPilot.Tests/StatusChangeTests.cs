@@ -17,13 +17,13 @@ public class StatusChangeTests : IDisposable
         using var db = _database.CreateContext();
         var input = new ApplicationInput("Nordlicht Software GmbH", "Auszubildender FIAE", "Hamburg",
             "https://example.org/stelle", new DateOnly(2026, 11, 30), appliedOn, status, "Wichtige Notiz");
-        return (await new ApplicationService(db, _clock).CreateAsync(input)).Id;
+        return (await new ApplicationService(db, _clock, _database.Storage).CreateAsync(input)).Id;
     }
 
     private async Task ChangeAsync(int id, ApplicationStatus status)
     {
         using var db = _database.CreateContext();
-        await new ApplicationService(db, _clock).ChangeStatusAsync(id, status);
+        await new ApplicationService(db, _clock, _database.Storage).ChangeStatusAsync(id, status);
     }
 
     private async Task<JobApplication> LoadAsync(int id)
@@ -104,7 +104,7 @@ public class StatusChangeTests : IDisposable
     {
         using var db = _database.CreateContext();
 
-        Assert.Null(await new ApplicationService(db, _clock).ChangeStatusAsync(999, ApplicationStatus.Angebot));
+        Assert.Null(await new ApplicationService(db, _clock, _database.Storage).ChangeStatusAsync(999, ApplicationStatus.Angebot));
     }
 
     [Fact]

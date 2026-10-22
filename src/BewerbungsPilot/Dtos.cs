@@ -40,12 +40,22 @@ public record ApplicationResponse(
         a.Status, a.Notes, a.CreatedAt, a.UpdatedAt, a.StatusChangedAt);
 }
 
-// Detail view: the application plus its history.
-public record ApplicationDetailResponse(ApplicationResponse Application, List<EventResponse> Events)
+// Detail view: the application plus its history and documents.
+public record ApplicationDetailResponse(ApplicationResponse Application, List<EventResponse> Events, List<DocumentResponse> Documents)
 {
     public static ApplicationDetailResponse FromEntity(JobApplication a) => new(
         ApplicationResponse.FromEntity(a),
-        a.Events.Select(e => new EventResponse(e.Id, e.Type, e.FromStatus, e.ToStatus, e.Description, e.OccurredAt)).ToList());
+        a.Events.Select(e => new EventResponse(e.Id, e.Type, e.FromStatus, e.ToStatus, e.Description, e.OccurredAt)).ToList(),
+        a.Documents.Select(DocumentResponse.FromEntity).ToList());
+}
+
+// Document metadata. The internal file name is deliberately NOT included.
+public record DocumentResponse(
+    int Id, int ApplicationId, DocumentCategory Category, string OriginalFileName,
+    long SizeBytes, string Sha256, DateTime UploadedAt)
+{
+    public static DocumentResponse FromEntity(ApplicationDocument d) => new(
+        d.Id, d.JobApplicationId, d.Category, d.OriginalFileName, d.SizeBytes, d.Sha256, d.UploadedAt);
 }
 
 public record EventResponse(

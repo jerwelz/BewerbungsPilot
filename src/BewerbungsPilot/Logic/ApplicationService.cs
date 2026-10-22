@@ -9,11 +9,13 @@ public class ApplicationService
 {
     private readonly AppDbContext _db;
     private readonly TimeProvider _clock;
+    private readonly DocumentStorage _storage;
 
-    public ApplicationService(AppDbContext db, TimeProvider clock)
+    public ApplicationService(AppDbContext db, TimeProvider clock, DocumentStorage storage)
     {
         _db = db;
         _clock = clock;
+        _storage = storage;
     }
 
     private DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
@@ -54,11 +56,13 @@ public class ApplicationService
             .ToListAsync();
     }
 
-    // Loads one application including its history, oldest entry first.
+    // Loads one application including its history (oldest first) and documents (newest first).
     public async Task<JobApplication?> GetByIdAsync(int id)
     {
         return await _db.Applications
             .Include(a => a.Events.OrderBy(e => e.OccurredAt).ThenBy(e => e.Id))
+            .Include(a => a.Documents.OrderByDescending(d => d.UploadedAt))
+            .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id);
     }
 
@@ -157,16 +161,24 @@ public class ApplicationService
         return true;
     }
 
-    // Deletes an application. Its history is removed by the database
-    // (cascade delete, configured in AppDbContext). Returns false if not found.
+    // Deletes an application. Its history and document rows are removed by the database
+    // (cascade delete, configured in AppDbContext); the document files are deleted here.
+    // Returns false if not found.
     public async Task<bool> DeleteAsync(int id)
     {
-        var application = await _db.Applications.FindAsync(id);
+        var application = await _db.Applications
+            .Include(a => a.Documents)
+            .FirstOrDefaultAsync(a => a.Id == id);
         if (application is null)
             return false;
 
+        var files = application.Documents.Select(d => d.StoredFileName).ToList();
         _db.Applications.Remove(application);
         await _db.SaveChangesAsync();
+
+        // Files only after the database change succeeded (same reasoning as DocumentService.DeleteAsync).
+        foreach (var file in files)
+            _storage.TryDelete(file);
         return true;
     }
 

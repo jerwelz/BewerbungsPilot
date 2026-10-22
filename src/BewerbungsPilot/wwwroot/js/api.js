@@ -11,7 +11,9 @@ export class ApiError extends Error {
 
 async function request(method, url, body) {
   const options = { method, headers: {} };
-  if (body !== undefined) {
+  if (body instanceof FormData) {
+    options.body = body; // file uploads: the browser sets the multipart Content-Type itself
+  } else if (body !== undefined) {
     options.headers['Content-Type'] = 'application/json';
     options.body = JSON.stringify(body);
   }
@@ -44,4 +46,14 @@ export const api = {
   },
 
   getDashboard: () => request('GET', '/api/dashboard'),
+
+  uploadDocument: (applicationId, file, category) => {
+    const form = new FormData();
+    form.append('file', file);
+    form.append('category', category);
+    return request('POST', `/api/applications/${applicationId}/documents`, form);
+  },
+  deleteDocument: (id) => request('DELETE', `/api/documents/${id}`),
+  previewUrl: (id) => `/api/documents/${id}/preview`,
+  downloadUrl: (id) => `/api/documents/${id}/download`,
 };

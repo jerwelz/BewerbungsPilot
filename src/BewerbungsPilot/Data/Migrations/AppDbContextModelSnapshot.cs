@@ -17,6 +17,56 @@ namespace BewerbungsPilot.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
 
+            modelBuilder.Entity("BewerbungsPilot.Data.ApplicationDocument", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("JobApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("OriginalFileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("StoredFileName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobApplicationId");
+
+                    b.HasIndex("StoredFileName")
+                        .IsUnique();
+
+                    b.ToTable("Documents", (string)null);
+                });
+
             modelBuilder.Entity("BewerbungsPilot.Data.ApplicationEvent", b =>
                 {
                     b.Property<int>("Id")
@@ -106,6 +156,17 @@ namespace BewerbungsPilot.Data.Migrations
                     b.ToTable("Applications");
                 });
 
+            modelBuilder.Entity("BewerbungsPilot.Data.ApplicationDocument", b =>
+                {
+                    b.HasOne("BewerbungsPilot.Data.JobApplication", "JobApplication")
+                        .WithMany("Documents")
+                        .HasForeignKey("JobApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobApplication");
+                });
+
             modelBuilder.Entity("BewerbungsPilot.Data.ApplicationEvent", b =>
                 {
                     b.HasOne("BewerbungsPilot.Data.JobApplication", "JobApplication")
@@ -119,6 +180,8 @@ namespace BewerbungsPilot.Data.Migrations
 
             modelBuilder.Entity("BewerbungsPilot.Data.JobApplication", b =>
                 {
+                    b.Navigation("Documents");
+
                     b.Navigation("Events");
                 });
 #pragma warning restore 612, 618

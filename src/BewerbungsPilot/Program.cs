@@ -15,10 +15,14 @@ var databasePath = Path.Combine(dataDirectory, "bewerbungspilot.db");
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite($"Data Source={databasePath}"));
 
+// --- Documents: private folder next to the database (NOT inside wwwroot) ---
+builder.Services.AddSingleton(new DocumentStorage(Path.Combine(dataDirectory, "documents")));
+
 // --- Services (business logic) ---
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ApplicationService>();
 builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<DocumentService>();
 
 // Send enums as text ("Beworben") instead of numbers in JSON.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -39,5 +43,6 @@ app.UseStaticFiles();
 // --- API ---
 app.MapApplicationEndpoints();
 app.MapDashboardEndpoints();
+app.MapDocumentEndpoints();
 
 app.Run();

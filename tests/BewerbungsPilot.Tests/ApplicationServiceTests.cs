@@ -20,7 +20,7 @@ public class ApplicationServiceTests : IDisposable
     {
         using (var db = _database.CreateContext())
         {
-            await new ApplicationService(db, _clock).CreateAsync(ValidInput());
+            await new ApplicationService(db, _clock, _database.Storage).CreateAsync(ValidInput());
         }
 
         // Read back with a NEW context to prove the data really is in the database.
@@ -39,7 +39,7 @@ public class ApplicationServiceTests : IDisposable
     {
         using var db = _database.CreateContext();
 
-        var created = await new ApplicationService(db, _clock).CreateAsync(ValidInput(ApplicationStatus.Beworben));
+        var created = await new ApplicationService(db, _clock, _database.Storage).CreateAsync(ValidInput(ApplicationStatus.Beworben));
 
         Assert.Equal(new DateOnly(2026, 10, 22), created.AppliedOn);
     }
@@ -50,7 +50,7 @@ public class ApplicationServiceTests : IDisposable
         using var db = _database.CreateContext();
         var input = ValidInput() with { CompanyName = "  ", Position = null };
 
-        var errors = new ApplicationService(db, _clock).Validate(input);
+        var errors = new ApplicationService(db, _clock, _database.Storage).Validate(input);
 
         Assert.Equal("Bitte geben Sie das Unternehmen an.", Assert.Single(errors["companyName"]));
         Assert.Equal("Bitte geben Sie die Position an.", Assert.Single(errors["position"]));
@@ -62,7 +62,7 @@ public class ApplicationServiceTests : IDisposable
         using var db = _database.CreateContext();
         var input = ValidInput(ApplicationStatus.Beworben, appliedOn: new DateOnly(2026, 10, 23));
 
-        var errors = new ApplicationService(db, _clock).Validate(input);
+        var errors = new ApplicationService(db, _clock, _database.Storage).Validate(input);
 
         Assert.True(errors.ContainsKey("appliedOn"));
     }
@@ -75,7 +75,7 @@ public class ApplicationServiceTests : IDisposable
     {
         using var db = _database.CreateContext();
 
-        var errors = new ApplicationService(db, _clock).Validate(ValidInput() with { JobUrl = url });
+        var errors = new ApplicationService(db, _clock, _database.Storage).Validate(ValidInput() with { JobUrl = url });
 
         Assert.True(errors.ContainsKey("jobUrl"));
     }
@@ -85,6 +85,6 @@ public class ApplicationServiceTests : IDisposable
     {
         using var db = _database.CreateContext();
 
-        Assert.Empty(new ApplicationService(db, _clock).Validate(ValidInput()));
+        Assert.Empty(new ApplicationService(db, _clock, _database.Storage).Validate(ValidInput()));
     }
 }

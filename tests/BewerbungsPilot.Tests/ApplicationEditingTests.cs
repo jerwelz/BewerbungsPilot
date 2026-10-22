@@ -19,7 +19,7 @@ public class ApplicationEditingTests : IDisposable
     private async Task<int> CreateAsync(ApplicationInput input)
     {
         using var db = _database.CreateContext();
-        return (await new ApplicationService(db, _clock).CreateAsync(input)).Id;
+        return (await new ApplicationService(db, _clock, _database.Storage).CreateAsync(input)).Id;
     }
 
     [Fact]
@@ -29,7 +29,7 @@ public class ApplicationEditingTests : IDisposable
 
         using (var db = _database.CreateContext())
         {
-            await new ApplicationService(db, _clock).UpdateAsync(id, Input(status: ApplicationStatus.InPruefung));
+            await new ApplicationService(db, _clock, _database.Storage).UpdateAsync(id, Input(status: ApplicationStatus.InPruefung));
         }
 
         using var readDb = _database.CreateContext();
@@ -51,7 +51,7 @@ public class ApplicationEditingTests : IDisposable
         using (var db = _database.CreateContext())
         {
             var input = Input(position: "Fachinformatiker Anwendungsentwicklung") with { Notes = "Ansprechpartnerin: Frau Berg" };
-            await new ApplicationService(db, _clock).UpdateAsync(id, input);
+            await new ApplicationService(db, _clock, _database.Storage).UpdateAsync(id, input);
         }
 
         using var readDb = _database.CreateContext();
@@ -66,7 +66,7 @@ public class ApplicationEditingTests : IDisposable
     {
         using var db = _database.CreateContext();
 
-        Assert.Null(await new ApplicationService(db, _clock).UpdateAsync(999, Input()));
+        Assert.Null(await new ApplicationService(db, _clock, _database.Storage).UpdateAsync(999, Input()));
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class ApplicationEditingTests : IDisposable
 
         using (var db = _database.CreateContext())
         {
-            Assert.True(await new ApplicationService(db, _clock).DeleteAsync(id));
+            Assert.True(await new ApplicationService(db, _clock, _database.Storage).DeleteAsync(id));
         }
 
         using var readDb = _database.CreateContext();
@@ -89,7 +89,7 @@ public class ApplicationEditingTests : IDisposable
     {
         using var db = _database.CreateContext();
 
-        Assert.False(await new ApplicationService(db, _clock).DeleteAsync(999));
+        Assert.False(await new ApplicationService(db, _clock, _database.Storage).DeleteAsync(999));
     }
 
     [Theory]
@@ -100,7 +100,7 @@ public class ApplicationEditingTests : IDisposable
         await CreateAsync(Input());
         using var db = _database.CreateContext();
 
-        var duplicates = await new ApplicationService(db, _clock).FindDuplicatesAsync(company, position, null);
+        var duplicates = await new ApplicationService(db, _clock, _database.Storage).FindDuplicatesAsync(company, position, null);
 
         Assert.Single(duplicates);
     }
@@ -111,7 +111,7 @@ public class ApplicationEditingTests : IDisposable
         await CreateAsync(Input(company: "Müller Logistik AG"));
         using var db = _database.CreateContext();
 
-        var duplicates = await new ApplicationService(db, _clock).FindDuplicatesAsync("MÜLLER LOGISTIK AG", "Auszubildender FIAE", null);
+        var duplicates = await new ApplicationService(db, _clock, _database.Storage).FindDuplicatesAsync("MÜLLER LOGISTIK AG", "Auszubildender FIAE", null);
 
         Assert.Single(duplicates);
     }
@@ -122,7 +122,7 @@ public class ApplicationEditingTests : IDisposable
         await CreateAsync(Input());
         using var db = _database.CreateContext();
 
-        var duplicates = await new ApplicationService(db, _clock).FindDuplicatesAsync("Nordlicht Software GmbH", "Werkstudent IT", null);
+        var duplicates = await new ApplicationService(db, _clock, _database.Storage).FindDuplicatesAsync("Nordlicht Software GmbH", "Werkstudent IT", null);
 
         Assert.Empty(duplicates);
     }
@@ -133,7 +133,7 @@ public class ApplicationEditingTests : IDisposable
         var id = await CreateAsync(Input());
         using var db = _database.CreateContext();
 
-        var duplicates = await new ApplicationService(db, _clock).FindDuplicatesAsync("Nordlicht Software GmbH", "Auszubildender FIAE", excludeId: id);
+        var duplicates = await new ApplicationService(db, _clock, _database.Storage).FindDuplicatesAsync("Nordlicht Software GmbH", "Auszubildender FIAE", excludeId: id);
 
         Assert.Empty(duplicates);
     }

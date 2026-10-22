@@ -13,7 +13,7 @@ public class DashboardServiceTests : IDisposable
     private async Task AddAsync(ApplicationStatus status, DateOnly? appliedOn = null)
     {
         using var db = _database.CreateContext();
-        await new ApplicationService(db, _clock).CreateAsync(
+        await new ApplicationService(db, _clock, _database.Storage).CreateAsync(
             new ApplicationInput("Firma", "Stelle", null, null, null, appliedOn, status, null));
     }
 
