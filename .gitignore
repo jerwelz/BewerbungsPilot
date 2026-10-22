@@ -1,0 +1,13 @@
+bin/
+obj/
+.vs/
+.vscode/
+.idea/
+*.user
+TestResults/
+
+# Private data: real database and documents. Never commit.
+storage/
+*.db
+*.db-shm
+*.db-wal

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bewerbungen · BewerbungsPilot</title>
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/applications.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Bewerbungen</h1>
+          <p class="page-subtitle" id="application-count">Wird geladen …</p>
+        </div>
+        <button class="btn btn-primary" type="button" id="new-application">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+            stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Neue Bewerbung
+        </button>
+      </header>
+
+      <section class="card" id="application-list" aria-live="polite"></section>
+    </main>
+  </div>
+</body>
+</html>
