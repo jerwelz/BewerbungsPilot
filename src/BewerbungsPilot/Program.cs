@@ -28,6 +28,16 @@ builder.Services.AddScoped<ScheduleService>();
 builder.Services.AddScoped<TimelineService>();
 builder.Services.AddScoped<WaitingQueueService>();
 builder.Services.AddScoped<AnalysisService>();
+builder.Services.AddScoped<MapService>();
+
+// --- Place search (Nominatim, only on user request; see NominatimGeocoder.cs) ---
+builder.Services.AddHttpClient<NominatimGeocoder>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Geocoding:BaseUrl"] ?? "https://nominatim.openstreetmap.org/");
+    client.DefaultRequestHeaders.UserAgent.ParseAdd(
+        builder.Configuration["Geocoding:UserAgent"] ?? "BewerbungsPilot/1.0 (local job application manager)");
+    client.Timeout = TimeSpan.FromSeconds(10);
+});
 
 // Send enums as text ("Beworben") instead of numbers in JSON.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -52,5 +62,6 @@ app.MapDocumentEndpoints();
 app.MapInterviewEndpoints();
 app.MapTimelineEndpoints();
 app.MapAnalysisEndpoints();
+app.MapMapEndpoints();
 
 app.Run();

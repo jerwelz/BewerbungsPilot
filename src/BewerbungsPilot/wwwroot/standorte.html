@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Standorte · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/lib/leaflet/leaflet.css">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/lib/leaflet/leaflet.js" defer></script>
+  <script type="module" src="/js/map.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Standorte</h1>
+          <p class="page-subtitle">Wo liegen Ihre möglichen Arbeitgeber – und wie weit entfernt (Luftlinie)?</p>
+        </div>
+        <div class="segmented map-view-toggle" role="group" aria-label="Ansicht">
+          <button type="button" class="segmented-btn" data-view="map" aria-pressed="true">Karte</button>
+          <button type="button" class="segmented-btn" data-view="list" aria-pressed="false">Liste</button>
+        </div>
+      </header>
+
+      <section class="card origin-bar" id="origin-bar" aria-label="Startpunkt"></section>
+
+      <div class="toolbar" role="search">
+        <div class="search-field">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <label for="map-search" class="visually-hidden">Unternehmen oder Position suchen</label>
+          <input class="input" id="map-search" type="search" placeholder="Unternehmen oder Position suchen" autocomplete="off">
+        </div>
+        <label for="map-status" class="visually-hidden">Status</label>
+        <select class="select" id="map-status"><option value="">Alle Status</option></select>
+        <label for="map-precision" class="visually-hidden">Standort</label>
+        <select class="select" id="map-precision">
+          <option value="all">Alle Standorte</option>
+          <option value="mapped">Mit Kartenposition</option>
+          <option value="Exact">Genaue Arbeitsadresse</option>
+          <option value="Approximate">Ungefährer Standort</option>
+          <option value="City">Nur Stadt / Ort</option>
+          <option value="Remote">Remote</option>
+          <option value="Unknown">Ohne bestätigte Position</option>
+        </select>
+        <label for="map-sort" class="visually-hidden">Sortierung</label>
+        <select class="select" id="map-sort">
+          <option value="company">Unternehmen (A–Z)</option>
+          <option value="distance">Entfernung (Luftlinie)</option>
+          <option value="status">Status</option>
+        </select>
+      </div>
+
+      <div class="form-alert" id="map-error" role="alert"></div>
+
+      <div class="map-layout" id="map-layout" data-view="map">
+        <section class="card map-card" aria-label="Karte">
+          <div class="map-notice" id="tile-notice" hidden>Kartenkacheln konnten nicht geladen werden (keine Internetverbindung?).
+            Liste, Entfernungen und Routen-Links funktionieren weiterhin.</div>
+          <div id="map" class="map"></div>
+          <ul class="map-legend" id="map-legend" aria-label="Legende"></ul>
+        </section>
+        <section class="card place-panel" aria-label="Unternehmen">
+          <div id="place-list" aria-live="polite"></div>
+        </section>
+      </div>
+
+      <details class="card method privacy-note">
+        <summary>Datenschutz &amp; externe Dienste</summary>
+        <ul>
+          <li><strong>Kartenkacheln</strong> werden von den Servern der OpenStreetMap Foundation geladen
+            (tile.openstreetmap.org). Dabei sehen diese Ihre IP-Adresse und den angezeigten Kartenausschnitt –
+            aber keine Bewerbungsdaten.</li>
+          <li><strong>Ortssuche</strong> (Nominatim, OpenStreetMap Foundation) nur, wenn Sie im Dialog auf „Suchen“ klicken.
+            Übertragen wird nur der eingegebene Suchtext, höchstens eine Anfrage pro Sekunde; Ergebnisse werden zwischengespeichert.</li>
+          <li><strong>Startpunkt</strong> wird nur in diesem Browser gespeichert. Für die Entfernungsberechnung wird er an
+            BewerbungsPilot auf diesem Rechner geschickt, aber dort weder gespeichert noch protokolliert.</li>
+          <li><strong>Routen-Links</strong> öffnen Google Maps mit Start und Ziel. BewerbungsPilot berechnet keine Fahrzeiten –
+            angezeigte Entfernungen sind Luftlinie.</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+</body>
+</html>

@@ -67,6 +67,10 @@ export const api = {
     const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value));
     return request('GET', `/api/analysis?${query}`);
   },
+  // Map: the starting point goes in the request body (never in the URL), see MapEndpoints.cs
+  queryMap: (origin) => request('POST', '/api/map/query', { origin }),
+  setMapLocation: (id, input) => request('PUT', `/api/applications/${id}/map-location`, input),
+  geocode: (query) => request('POST', '/api/geocode', { query }), // forwarded to Nominatim
   getWaiting: (sort) => request('GET', `/api/waiting?sort=${sort}`), // SinceSubmission | SinceStatusChange
 
   previewUrl: (id) => `/api/documents/${id}/preview`,

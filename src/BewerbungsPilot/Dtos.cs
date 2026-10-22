@@ -176,6 +176,33 @@ public record Evidence(
 
 public record WithoutSubmissionDate(int Drafts, int Other, List<AnalysisApplication> Applications);
 
+// ---------- Standorte (map) ----------
+// No notes, documents or contacts. The starting point arrives in the request BODY
+// (not in the URL, so it never appears in request logs) and is never stored.
+
+public record OriginInput(double Latitude, double Longitude);
+public record MapQuery(OriginInput? Origin);
+
+public record MapResponse(List<MapItem> Items, bool HasOrigin);
+
+// Latitude/Longitude only for confirmed positions (Exact, Approximate, City).
+// DistanceKm: straight line ("Luftlinie") to the origin, null without origin or position.
+// SameLocationCount: applications sharing this exact position (0 = no position).
+public record MapItem(
+    int Id, string CompanyName, string Position, ApplicationStatus Status,
+    string? Location, LocationPrecision Precision, double? Latitude, double? Longitude, string? MapLabel,
+    double? DistanceKm, int SameLocationCount, RouteLinks? Links);
+
+public record RouteLinks(string Transit, string Driving, string Bicycling, string Walking);
+
+// PUT /api/applications/{id}/map-location
+public record MapLocationInput(LocationPrecision Precision, double? Latitude, double? Longitude, string? Label);
+
+// POST /api/geocode
+public record GeocodeQuery(string? Query);
+public record GeocodeResult(string Label, double Latitude, double Longitude, LocationPrecision SuggestedPrecision, string Kind);
+public record GeocodeResponse(List<GeocodeResult> Results, string Attribution);
+
 // ---------- Dashboard ----------
 
 public record DashboardResponse(

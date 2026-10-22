@@ -172,6 +172,7 @@ const ICONS = {
   pipeline: '<path d="M3 3h5v18H3zM10 3h5v12h-5zM17 3h4v8h-4z"/>',
   timeline: '<path d="M3 6h9M8 12h13M3 18h7"/><circle cx="12" cy="6" r="0.5"/>',
   analysis: '<path d="M4 20V4M4 20h16"/><path d="M8 8h6M8 12h10M8 16h4"/>',
+  places: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
 };
 
@@ -181,6 +182,7 @@ const NAV_ITEMS = [
   { key: 'pipeline', label: 'Pipeline', href: '/pipeline.html', ready: true },
   { key: 'timeline', label: 'Verlauf', href: '/verlauf.html', ready: true },
   { key: 'analysis', label: 'Analyse', href: '/analyse.html', ready: true },
+  { key: 'places', label: 'Standorte', href: '/standorte.html', ready: true },
   { key: 'calendar', label: 'Kalender', href: '/kalender.html', ready: true },
 ];
 

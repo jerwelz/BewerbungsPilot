@@ -25,6 +25,9 @@ public class AppDbContext : DbContext
             entity.Property(a => a.Location).HasMaxLength(200);
             entity.Property(a => a.JobUrl).HasMaxLength(2000);
             entity.Property(a => a.Status).HasConversion<string>().HasMaxLength(30);
+            // Existing rows get "Unknown" when the column is added (see migration AddMapLocation).
+            entity.Property(a => a.LocationPrecision).HasConversion<string>().HasMaxLength(20);
+            entity.Property(a => a.MapLabel).HasMaxLength(300);
 
             // 1:n relationship. Deleting an application deletes its history too.
             entity.HasMany(a => a.Events)

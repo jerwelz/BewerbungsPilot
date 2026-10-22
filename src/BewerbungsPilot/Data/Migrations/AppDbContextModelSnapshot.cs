@@ -181,6 +181,21 @@ namespace BewerbungsPilot.Data.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("LocationPrecision")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("MapLabel")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<double?>("MapLatitude")
+                        .HasColumnType("REAL");
+
+                    b.Property<double?>("MapLongitude")
+                        .HasColumnType("REAL");
+
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
 

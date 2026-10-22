@@ -26,6 +26,16 @@ public enum EventType
     DeadlineChanged
 }
 
+// How precise the confirmed map position is. Chosen by the user, never guessed.
+public enum LocationPrecision
+{
+    Unknown,     // no confirmed position (default)
+    Exact,       // confirmed workplace address
+    Approximate, // e.g. street or district
+    City,        // only the town/city
+    Remote       // remote position – deliberately no map position
+}
+
 public enum InterviewType
 {
     Telefon,
@@ -65,6 +75,13 @@ public class JobApplication
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime StatusChangedAt { get; set; }
+
+    // Confirmed map position (page "Standorte"). Only set when the user confirms it;
+    // Location above stays the free text the user typed.
+    public LocationPrecision LocationPrecision { get; set; } = LocationPrecision.Unknown;
+    public double? MapLatitude { get; set; }
+    public double? MapLongitude { get; set; }
+    public string? MapLabel { get; set; } // e.g. "Hafenstraße 12, Hamburg" or "Hamburg"
 
     // Navigation property: all history entries belonging to this application (1:n).
     public List<ApplicationEvent> Events { get; set; } = new();
