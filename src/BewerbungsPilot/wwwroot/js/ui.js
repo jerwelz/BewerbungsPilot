@@ -17,6 +17,15 @@ export function statusBadge(value) {
   return `<span class="badge status-${value}">${escapeHtml(statusLabel(value))}</span>`;
 }
 
+// Search used on the list and the pipeline: matches company, position or location,
+// ignoring upper/lower case.
+export function matchesSearch(application, query) {
+  const normalize = (text) => (text ?? '').toLocaleLowerCase('de-DE').trim();
+  const search = normalize(query);
+  return !search || [application.companyName, application.position, application.location]
+    .some((text) => normalize(text).includes(search));
+}
+
 // Prevents user text from being interpreted as HTML (protection against XSS).
 export function escapeHtml(text) {
   return String(text ?? '')
@@ -92,7 +101,7 @@ const ICONS = {
 const NAV_ITEMS = [
   { key: 'overview', label: 'Übersicht', href: '/', ready: true },
   { key: 'applications', label: 'Bewerbungen', href: '/bewerbungen.html', ready: true },
-  { key: 'pipeline', label: 'Pipeline', href: '/pipeline.html', ready: false },
+  { key: 'pipeline', label: 'Pipeline', href: '/pipeline.html', ready: true },
   { key: 'schedule', label: 'Termine & Fristen', href: '/termine.html', ready: false },
 ];
 

@@ -15,6 +15,7 @@ public static class ApplicationEndpoints
         group.MapGet("/duplicates", FindDuplicates);
         group.MapPost("/", Create);
         group.MapPut("/{id:int}", Update);
+        group.MapPatch("/{id:int}/status", ChangeStatus);
         group.MapDelete("/{id:int}", Delete);
     }
 
@@ -65,6 +66,20 @@ public static class ApplicationEndpoints
         return updated is null
             ? NotFound()
             : Results.Ok(ApplicationDetailResponse.FromEntity(updated));
+    }
+
+    // PATCH /api/applications/5/status   (JSON body: { "status": "InPruefung" })
+    private static async Task<IResult> ChangeStatus(int id, StatusChangeInput input, ApplicationService service)
+    {
+        if (!Enum.IsDefined(input.Status))
+            return Results.ValidationProblem(
+                new Dictionary<string, string[]> { ["status"] = ["Unbekannter Status."] },
+                title: "Bitte prüfen Sie Ihre Eingaben.");
+
+        var updated = await service.ChangeStatusAsync(id, input.Status);
+        return updated is null
+            ? NotFound()
+            : Results.Ok(ApplicationResponse.FromEntity(updated));
     }
 
     // DELETE /api/applications/5

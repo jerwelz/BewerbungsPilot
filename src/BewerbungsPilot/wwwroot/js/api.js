@@ -35,6 +35,7 @@ export const api = {
   createApplication: (input) => request('POST', '/api/applications', input),
   updateApplication: (id, input) => request('PUT', `/api/applications/${id}`, input),
   deleteApplication: (id) => request('DELETE', `/api/applications/${id}`),
+  changeStatus: (id, status) => request('PATCH', `/api/applications/${id}/status`, { status }),
 
   findDuplicates: (companyName, position, excludeId) => {
     const query = new URLSearchParams({ companyName, position });

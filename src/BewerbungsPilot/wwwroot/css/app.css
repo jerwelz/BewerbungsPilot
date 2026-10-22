@@ -665,9 +665,226 @@ body:has(dialog[open]) { overflow: hidden; }
   .dashboard-grid { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ---------- Pipeline (Kanban) ---------- */
+
+/* One accent color per status – same hues as the badges and charts. */
+.accent-Entwurf               { --accent: #94A3B8; }
+.accent-Beworben              { --accent: #2563EB; }
+.accent-InPruefung            { --accent: #D97706; }
+.accent-Vorstellungsgespraech { --accent: #7C3AED; }
+.accent-Angebot               { --accent: #059669; }
+.accent-Absage                { --accent: #DC2626; }
+
+.page-actions { display: flex; align-items: center; gap: 8px; }
+.search-compact { flex: 0 1 240px; }
+
+.board {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(250px, 1fr);
+  gap: 12px;
+  height: calc(100vh - 190px);
+  min-height: 420px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  padding-bottom: 6px;
+}
+
+.kanban-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #F1F5F9;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition:
+    background-color var(--duration-base) var(--ease),
+    border-color var(--duration-base) var(--ease),
+    box-shadow var(--duration-base) var(--ease);
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 12px 8px;
+}
+.column-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.column-title { font-size: 13px; font-weight: 600; }
+.column-count {
+  margin-left: auto;
+  min-width: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-muted);
+  text-align: center;
+}
+
+.column-list {
+  flex: 1;
+  min-height: 80px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 8px 8px;
+}
+
+/* Shown on top of an empty list; the list itself stays the drop target. */
+.kanban-column { position: relative; }
+.column-empty {
+  position: absolute;
+  top: 46px; left: 8px; right: 8px;
+  margin: 0;
+  padding: 18px 12px;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  font-size: 12.5px;
+  text-align: center;
+  pointer-events: none; /* drops go to the list underneath */
+}
+.board.is-dragging .column-empty { opacity: 0.4; }
+
+/* All columns are valid targets while dragging; the one under the pointer is highlighted. */
+.board.is-dragging .kanban-column { border-color: #BFDBFE; }
+.kanban-column.is-over {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+.kanban-card {
+  position: relative;
+  flex-shrink: 0;
+  padding: 10px 12px 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  cursor: grab;
+  user-select: none;
+  transition:
+    box-shadow 150ms var(--ease),
+    border-color 150ms var(--ease),
+    transform 150ms var(--ease),
+    opacity 150ms var(--ease);
+}
+/* Status indicator: thin colored bar on the left edge. */
+.kanban-card::before {
+  content: "";
+  position: absolute;
+  left: -1px; top: 8px; bottom: 8px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
+.kanban-card:hover { border-color: var(--color-border-strong); box-shadow: var(--shadow-md); }
+
+.card-title {
+  display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.kanban-card:hover .card-title { color: var(--color-primary); }
+.card-position { margin: 2px 0 0; font-size: 13px; color: var(--color-text); overflow-wrap: anywhere; }
+.card-meta { margin: 4px 0 0; font-size: 12px; color: var(--color-muted); }
+
+.card-footer { margin-top: 8px; }
+.status-select {
+  width: 100%;
+  min-height: 36px;
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--color-text);
+  background: #F8FAFC;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.status-select:hover { border-color: var(--color-border-strong); }
+.status-select:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+/* Pickup: immediate feedback on the chosen card. */
+.card-chosen { border-color: #93C5FD; box-shadow: var(--shadow-md); }
+
+/* The floating copy that follows the pointer. `scale` combines with the
+   transform SortableJS uses for positioning. */
+.card-dragging {
+  scale: 1.02;
+  opacity: 1 !important;
+  box-shadow: var(--shadow-lg) !important;
+  cursor: grabbing !important;
+}
+
+/* Placeholder at the position where the card will land. */
+.card-placeholder {
+  background: var(--color-primary-soft) !important;
+  border: 1px dashed var(--color-primary) !important;
+  box-shadow: none !important;
+}
+.card-placeholder > *, .card-placeholder::before { visibility: hidden; }
+
+.kanban-card.is-saving { opacity: 0.6; pointer-events: none; }
+
+.card-settle { animation: card-settle 220ms var(--ease); }
+@keyframes card-settle {
+  from { scale: 1.02; box-shadow: var(--shadow-lg); border-color: var(--color-primary); }
+  to { scale: 1; }
+}
+
+.column-switcher, .mobile-only { display: none; }
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 860px) {
+  .desktop-only { display: none; }
+  .mobile-only { display: inline; }
+  .page-actions { flex-wrap: wrap; }
+  .search-compact { flex: 1 1 200px; }
+
+  /* Phones: chips to choose a column, then one full-width column. */
+  .column-switcher {
+    display: flex;
+    gap: 6px;
+    margin: 0 -16px 12px;
+    padding: 0 16px 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .switcher-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    flex-shrink: 0;
+    min-height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--color-border-strong);
+    border-radius: 999px;
+    background: var(--color-surface);
+    font: inherit; font-size: 13px; font-weight: 500;
+    color: var(--color-text);
+    cursor: pointer;
+  }
+  .switcher-chip[aria-pressed="true"] { border-color: var(--color-primary); background: var(--color-primary-soft); color: #1D4ED8; }
+  .switcher-count { font-size: 12px; color: var(--color-muted); }
+
+  .board { display: block; height: auto; min-height: 0; overflow: visible; }
+  .kanban-column:not(.is-active) { display: none; }
+  .column-list { overflow: visible; }
+  .kanban-card { cursor: pointer; }
+
   .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
   .toolbar .select { flex: 1 1 140px; }
   .detail-grid { grid-template-columns: 1fr; }

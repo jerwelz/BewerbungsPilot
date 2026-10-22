@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipeline · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script src="/lib/Sortable.min.js" defer></script>
+  <script type="module" src="/js/pipeline.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Pipeline</h1>
+          <p class="page-subtitle">
+            <span class="desktop-only">Karten zwischen den Spalten ziehen oder den Status direkt auf der Karte ändern.</span>
+            <span class="mobile-only">Spalte oben auswählen und den Status direkt auf der Karte ändern.</span>
+          </p>
+        </div>
+        <div class="page-actions">
+          <div class="search-field search-compact" role="search">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <label for="pipeline-search" class="visually-hidden">Bewerbungen durchsuchen</label>
+            <input class="input" id="pipeline-search" type="search" placeholder="Suchen …" autocomplete="off">
+          </div>
+          <button class="btn btn-primary" type="button" id="new-application">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+              stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            Neue Bewerbung
+          </button>
+        </div>
+      </header>
+
+      <div class="form-alert" id="pipeline-error" role="alert"></div>
+
+      <!-- Mobile only: choose which column is shown -->
+      <nav class="column-switcher" id="column-switcher" aria-label="Spalte auswählen"></nav>
+
+      <div class="board" id="board"></div>
+    </main>
+  </div>
+</body>
+</html>

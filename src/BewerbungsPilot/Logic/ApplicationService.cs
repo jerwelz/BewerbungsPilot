@@ -71,9 +71,11 @@ public class ApplicationService
         var application = new JobApplication
         {
             CreatedAt = now,
-            StatusChangedAt = now
+            StatusChangedAt = now,
+            Status = input.Status
         };
         CopyInput(input, application, now);
+        EnsureAppliedOn(application);
 
         application.Events.Add(new ApplicationEvent
         {
@@ -98,24 +100,61 @@ public class ApplicationService
             return null;
 
         var now = UtcNow;
-        var oldStatus = application.Status;
         CopyInput(input, application, now);
-
-        if (application.Status != oldStatus)
-        {
-            application.StatusChangedAt = now;
-            application.Events.Add(new ApplicationEvent
-            {
-                Type = EventType.StatusChanged,
-                FromStatus = oldStatus,
-                ToStatus = application.Status,
-                Description = $"Status geändert: {StatusLabels.German[oldStatus]} → {StatusLabels.German[application.Status]}",
-                OccurredAt = now
-            });
-        }
+        SetStatus(application, input.Status, now);
 
         await _db.SaveChangesAsync();
         return await GetByIdAsync(id);
+    }
+
+    // Changes ONLY the status (used by the Kanban board). All other fields stay as they are.
+    // Returns null if the id does not exist. Uses the same SetStatus rule as UpdateAsync.
+    public async Task<JobApplication?> ChangeStatusAsync(int id, ApplicationStatus newStatus)
+    {
+        var application = await _db.Applications.FindAsync(id);
+        if (application is null)
+            return null;
+
+        var now = UtcNow;
+        if (SetStatus(application, newStatus, now))
+            application.UpdatedAt = now;
+
+        await _db.SaveChangesAsync(); // status + history entry in one transaction
+        return application;
+    }
+
+    // THE status-change rule – the only place where a status is changed.
+    // Adds exactly one history entry if the status really changes.
+    // Returns true if something changed.
+    private bool SetStatus(JobApplication application, ApplicationStatus newStatus, DateTime now)
+    {
+        var oldStatus = application.Status;
+        application.Status = newStatus;
+        var appliedOnSet = EnsureAppliedOn(application);
+
+        if (newStatus == oldStatus)
+            return appliedOnSet;
+
+        application.StatusChangedAt = now;
+        application.Events.Add(new ApplicationEvent
+        {
+            Type = EventType.StatusChanged,
+            FromStatus = oldStatus,
+            ToStatus = newStatus,
+            Description = $"Status geändert: {StatusLabels.German[oldStatus]} → {StatusLabels.German[newStatus]}",
+            OccurredAt = now
+        });
+        return true;
+    }
+
+    // Rule: anything beyond "Entwurf" has been submitted, so it needs a submission date.
+    // Returns true if the date was filled in.
+    private bool EnsureAppliedOn(JobApplication application)
+    {
+        if (application.Status == ApplicationStatus.Entwurf || application.AppliedOn is not null)
+            return false;
+        application.AppliedOn = Today;
+        return true;
     }
 
     // Deletes an application. Its history is removed by the database
@@ -160,7 +199,8 @@ public class ApplicationService
     }
 
     // Shared by create and update: copies the form values onto the entity.
-    private void CopyInput(ApplicationInput input, JobApplication application, DateTime now)
+    // The status is NOT copied here – it is set via SetStatus so the history stays correct.
+    private static void CopyInput(ApplicationInput input, JobApplication application, DateTime now)
     {
         application.CompanyName = input.CompanyName!.Trim();
         application.Position = input.Position!.Trim();
@@ -168,13 +208,8 @@ public class ApplicationService
         application.JobUrl = Clean(input.JobUrl);
         application.Deadline = input.Deadline;
         application.AppliedOn = input.AppliedOn;
-        application.Status = input.Status;
         application.Notes = Clean(input.Notes);
         application.UpdatedAt = now;
-
-        // Rule: anything beyond "Entwurf" has been submitted, so it needs a submission date.
-        if (application.Status != ApplicationStatus.Entwurf && application.AppliedOn is null)
-            application.AppliedOn = Today;
     }
 
     private static string? Clean(string? value) =>

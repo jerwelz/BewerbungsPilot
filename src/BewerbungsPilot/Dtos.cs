@@ -17,6 +17,9 @@ public record ApplicationInput(
     ApplicationStatus Status,
     string? Notes);
 
+// Body of PATCH /api/applications/{id}/status (Kanban board).
+public record StatusChangeInput(ApplicationStatus Status);
+
 // What the server sends back.
 public record ApplicationResponse(
     int Id,

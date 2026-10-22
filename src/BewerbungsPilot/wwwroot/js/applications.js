@@ -3,7 +3,7 @@
 // so typing in the search field does not send any requests.
 
 import { api } from './api.js';
-import { renderSidebar, statusBadge, formatDate, escapeHtml, showToast, STATUSES, todayIso } from './ui.js';
+import { renderSidebar, statusBadge, formatDate, escapeHtml, showToast, STATUSES, todayIso, matchesSearch } from './ui.js';
 import { openApplicationForm } from './application-form.js';
 import { openDetailPanel } from './detail-panel.js';
 
@@ -72,8 +72,6 @@ async function loadApplications(highlightId) {
 
 // ---------- Filtering & sorting ----------
 
-const normalize = (text) => (text ?? '').toLocaleLowerCase('de-DE').trim();
-
 function daysAgoIso(days) {
   const date = new Date();
   date.setDate(date.getDate() - days);
@@ -98,9 +96,8 @@ const SORTERS = {
 };
 
 function filteredApplications() {
-  const search = normalize(controls.search.value);
   return allApplications
-    .filter((a) => !search || [a.companyName, a.position, a.location].some((text) => normalize(text).includes(search)))
+    .filter((a) => matchesSearch(a, controls.search.value))
     .filter((a) => !controls.status.value || a.status === controls.status.value)
     .filter((a) => matchesPeriod(a, controls.period.value))
     .sort(SORTERS[controls.sort.value]);
