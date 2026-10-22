@@ -104,6 +104,55 @@ namespace BewerbungsPilot.Data.Migrations
                     b.ToTable("ApplicationEvents");
                 });
 
+            modelBuilder.Entity("BewerbungsPilot.Data.Interview", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("ContactPerson")
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("JobApplicationId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(4000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ScheduledAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JobApplicationId");
+
+                    b.HasIndex("ScheduledAt");
+
+                    b.ToTable("Interviews");
+                });
+
             modelBuilder.Entity("BewerbungsPilot.Data.JobApplication", b =>
                 {
                     b.Property<int>("Id")
@@ -178,11 +227,24 @@ namespace BewerbungsPilot.Data.Migrations
                     b.Navigation("JobApplication");
                 });
 
+            modelBuilder.Entity("BewerbungsPilot.Data.Interview", b =>
+                {
+                    b.HasOne("BewerbungsPilot.Data.JobApplication", "JobApplication")
+                        .WithMany("Interviews")
+                        .HasForeignKey("JobApplicationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("JobApplication");
+                });
+
             modelBuilder.Entity("BewerbungsPilot.Data.JobApplication", b =>
                 {
                     b.Navigation("Documents");
 
                     b.Navigation("Events");
+
+                    b.Navigation("Interviews");
                 });
 #pragma warning restore 612, 618
         }

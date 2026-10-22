@@ -45,8 +45,9 @@ function openForm() {
   });
 }
 
-function openDetails(id) {
+function openDetails(id, tab) {
   openDetailPanel(id, {
+    tab,
     onChanged: (saved) => loadApplications(saved.id),
     onDeleted: () => loadApplications(),
   });
@@ -109,6 +110,15 @@ function filtersActive() {
 
 // ---------- Rendering ----------
 
+// Overdue and soon-due deadlines are highlighted; the state comes from the server (ScheduleRules).
+function deadlineCell(a) {
+  if (!a.deadline) return '–';
+  const text = formatDate(a.deadline);
+  if (a.deadlineState === 'Overdue') return `<span class="deadline-text deadline-Overdue">${text} · überfällig</span>`;
+  if (a.deadlineState === 'DueSoon') return `<span class="deadline-text deadline-DueSoon">${text}</span>`;
+  return text;
+}
+
 function render(highlightId) {
   const visible = filteredApplications();
   const total = allApplications.length;
@@ -148,7 +158,7 @@ function render(highlightId) {
       </td>
       <td class="cell-muted">${escapeHtml(a.location ?? '–')}</td>
       <td>${statusBadge(a.status)}</td>
-      <td class="cell-muted">${formatDate(a.deadline)}</td>
+      <td class="cell-muted">${deadlineCell(a)}</td>
       <td class="cell-muted">${formatDate(a.appliedOn)}</td>
     </tr>`).join('');
 
@@ -172,5 +182,7 @@ function render(highlightId) {
 
 // Start: load data; "?id=5" in the URL (e.g. from the dashboard) opens that application directly.
 await loadApplications();
-const requestedId = Number(new URLSearchParams(location.search).get('id'));
-if (requestedId) openDetails(requestedId);
+// "&tab=schedule" opens a specific tab (links from the dashboard and the calendar).
+const query = new URLSearchParams(location.search);
+const requestedId = Number(query.get('id'));
+if (requestedId) openDetails(requestedId, query.get('tab') ?? undefined);

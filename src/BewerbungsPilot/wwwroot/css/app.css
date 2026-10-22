@@ -532,7 +532,10 @@ body:has(dialog[open]) { overflow: hidden; }
   gap: 4px;
   padding: 0 24px;
   border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;        /* very narrow screens: tabs scroll instead of widening the panel */
+  scrollbar-width: none;
 }
+.tab { flex-shrink: 0; }
 .tab {
   display: inline-flex; align-items: center; gap: 6px;
   min-height: 40px;
@@ -794,6 +797,217 @@ body:has(dialog[open]) { overflow: hidden; }
 .preview-status { margin: 0; padding: 48px 24px; text-align: center; color: var(--color-muted); }
 .preview-status.is-error { color: var(--color-error); }
 
+/* ---------- Schedule: state pills, deadlines, date blocks ---------- */
+
+.state-pill {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  vertical-align: 1px;
+  border: 1px solid transparent;
+}
+.state-pill.state-Open      { color: #1D4ED8; background: #EFF6FF; border-color: #DBEAFE; }
+.state-pill.state-DueSoon   { color: #B45309; background: #FFFBEB; border-color: #FDE68A; }
+.state-pill.state-Overdue   { color: #B91C1C; background: #FEF2F2; border-color: #FECACA; }
+.state-pill.state-Done      { color: #047857; background: #ECFDF5; border-color: #A7F3D0; }
+.state-pill.state-Cancelled { color: #64748B; background: #F1F5F9; border-color: #E2E8F0; }
+
+.deadline-text.deadline-Overdue { color: var(--color-error); font-weight: 500; }
+.deadline-text.deadline-DueSoon { color: #B45309; font-weight: 500; }
+.card-deadline { margin: 4px 0 0; font-size: 12px; color: var(--color-muted); }
+
+/* Small calendar sheet: month above, day below */
+.date-block {
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  text-align: center;
+  line-height: 1.1;
+}
+.date-month {
+  width: 100%;
+  padding: 2px 0;
+  background: #F1F5F9;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+.date-day { padding: 4px 0 5px; font-size: 17px; font-weight: 650; }
+.date-block-sm { width: 40px; }
+.date-block-sm .date-day { font-size: 15px; padding: 3px 0 4px; }
+.date-block.kind-Interview .date-month { background: var(--color-primary-soft); color: #1D4ED8; }
+.date-block.kind-Deadline .date-month { background: #FFFBEB; color: #B45309; }
+
+/* Termine tab */
+.schedule-section + .schedule-section { margin-top: 24px; }
+.schedule-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.schedule-header .section-title { margin: 0; }
+.schedule-empty { margin: 0; }
+
+.deadline-box {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.deadline-box.deadline-Overdue { border-color: #FECACA; background: #FEF2F2; }
+.deadline-box.deadline-DueSoon { border-color: #FDE68A; background: #FFFBEB; }
+.deadline-title { font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.deadline-main .muted { font-size: 13px; }
+
+.interview-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.interview-row {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 12px 8px 12px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
+}
+.interview-row:hover { border-color: var(--color-border-strong); box-shadow: var(--shadow-sm); }
+.interview-row.interview-Cancelled { background: #FBFCFE; }
+.interview-row.interview-Cancelled .interview-title { color: var(--color-muted); text-decoration: line-through; text-decoration-color: #94A3B8; }
+.interview-row.interview-Cancelled .state-pill { text-decoration: none; }
+.interview-row.interview-Overdue { border-color: #FECACA; }
+.interview-main { flex: 1; min-width: 0; }
+.interview-title { font-weight: 600; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.interview-meta { display: flex; flex-wrap: wrap; gap: 2px 12px; margin-top: 2px; font-size: 13px; color: var(--color-muted); }
+.interview-notes { margin: 6px 0 0; font-size: 13px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.interview-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 2px; flex-shrink: 0; max-width: 80px; }
+.dialog-context { margin: 0; color: var(--color-muted); }
+.dialog-context:empty { display: none; }
+
+/* Dashboard: upcoming events */
+.dashboard-grid-even { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.card-header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.card-link { font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; }
+.card-link:hover { text-decoration: underline; }
+.upcoming-item { align-items: center; }
+.upcoming-item .activity-main { gap: 1px; }
+
+/* ---------- Calendar ---------- */
+
+.calendar-toolbar {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.calendar-nav { display: flex; align-items: center; gap: 4px; }
+.calendar-month { min-width: 170px; margin: 0 4px; font-size: 17px; font-weight: 600; text-align: center; }
+.calendar-nav .btn { margin-left: 8px; }
+
+.calendar-legend { list-style: none; margin: 0; padding: 0; display: flex; gap: 16px; font-size: 13px; color: var(--color-muted); }
+.calendar-legend li { display: flex; align-items: center; gap: 6px; }
+.legend-swatch.kind-Interview { background: var(--color-primary); }
+.legend-swatch.kind-Deadline { background: var(--color-warning); }
+
+.calendar-layout { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.calendar-card { overflow: hidden; }
+
+.calendar-weekdays, .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.calendar-weekdays span {
+  padding: 8px 10px;
+  font-size: 12px; font-weight: 600; color: var(--color-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.cal-day {
+  min-height: 112px;
+  padding: 6px;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease);
+}
+.cal-day:nth-child(7n) { border-right: 0; }
+.cal-day:hover { background: #F8FAFC; }
+.cal-day.is-weekend { background: #FCFDFE; }
+.cal-day.is-outside { background: #F8FAFC; }
+.cal-day.is-outside .cal-date { color: #94A3B8; }
+.cal-day.is-selected { background: var(--color-primary-soft); box-shadow: inset 0 0 0 1.5px var(--color-primary); }
+
+.cal-date {
+  display: inline-grid; place-items: center;
+  min-width: 28px; height: 28px;
+  padding: 0 6px;
+  border: 0; border-radius: 999px;
+  background: none;
+  font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+}
+.cal-day.is-today .cal-date { background: var(--color-primary); color: #FFFFFF; }
+
+.cal-events { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.cal-chip {
+  display: block; width: 100%;
+  padding: 2px 6px;
+  border: 0;
+  border-left: 3px solid var(--chip-accent);
+  border-radius: 4px;
+  background: var(--chip-bg);
+  font: inherit; font-size: 12px;
+  color: var(--color-text);
+  text-align: left;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  cursor: pointer;
+  transition: filter var(--duration-fast) var(--ease);
+}
+.cal-chip:hover { filter: brightness(0.96); }
+.cal-chip.kind-Interview { --chip-accent: var(--color-primary); --chip-bg: #EFF6FF; }
+.cal-chip.kind-Deadline  { --chip-accent: var(--color-warning); --chip-bg: #FFFBEB; }
+.cal-chip.state-Overdue  { --chip-accent: var(--color-error); color: #991B1B; }
+.cal-chip.state-Done, .cal-chip.state-Cancelled { --chip-accent: #CBD5E1; --chip-bg: #F1F5F9; color: var(--color-muted); }
+.cal-chip.state-Cancelled { text-decoration: line-through; }
+.chip-time { font-weight: 600; }
+.cal-more { padding: 0 6px; font-size: 11.5px; color: var(--color-muted); }
+
+.day-panel { padding: 16px; display: flex; flex-direction: column; gap: 12px; position: sticky; top: 16px; }
+.day-panel .btn { align-self: flex-start; }
+
+.agenda-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.agenda-item {
+  display: flex; align-items: flex-start; gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--item-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: inherit; color: inherit; text-align: left;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease), box-shadow var(--duration-fast) var(--ease);
+}
+.agenda-item:hover { box-shadow: var(--shadow-sm); border-color: var(--color-border-strong); border-left-color: var(--item-accent); }
+.agenda-item.kind-Interview { --item-accent: var(--color-primary); }
+.agenda-item.kind-Deadline { --item-accent: var(--color-warning); }
+.agenda-time { flex-shrink: 0; width: 72px; font-size: 13px; font-weight: 600; }
+.agenda-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.agenda-title { font-weight: 500; }
+.agenda-meta { font-size: 12.5px; color: var(--color-muted); overflow-wrap: anywhere; }
+
+.agenda { display: none; }
+.agenda-day { padding: 12px; margin-bottom: 10px; }
+.agenda-day.is-today { border-color: var(--color-primary); }
+.agenda-heading { margin: 0 0 8px; font-size: 14px; font-weight: 600; }
+.agenda-empty { margin: 0; padding: 24px 16px; text-align: center; color: var(--color-muted); }
+
+@media (max-width: 1100px) {
+  .calendar-layout { grid-template-columns: minmax(0, 1fr); }
+  .day-panel { position: static; }
+  .dashboard-grid-even { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ---------- Pipeline (Kanban) ---------- */
 
 /* One accent color per status – same hues as the badges and charts. */
@@ -986,6 +1200,16 @@ body:has(dialog[open]) { overflow: hidden; }
   .upload-row { flex-direction: column; align-items: stretch; }
   .upload-row .btn { margin-top: 0; }
   .doc-hash { display: none; }
+  /* Calendar: agenda list instead of the month grid */
+  .calendar-layout { display: none; }
+  .agenda { display: block; }
+  .calendar-toolbar { flex-direction: column; align-items: stretch; }
+  .calendar-nav { justify-content: space-between; }
+  .calendar-month { min-width: 0; flex: 1; }
+  .agenda-time { width: 64px; }
+  .agenda-item { flex-wrap: wrap; }
+  .interview-actions { max-width: none; }
+  .interview-row { flex-wrap: wrap; }
   .desktop-only { display: none; }
   .mobile-only { display: inline; }
   .page-actions { flex-wrap: wrap; }
@@ -1024,7 +1248,8 @@ body:has(dialog[open]) { overflow: hidden; }
   .toolbar .select { flex: 1 1 140px; }
   .detail-grid { grid-template-columns: 1fr; }
   .panel-header, .panel-actions, .panel-body { padding-left: 16px; padding-right: 16px; }
-  .tabs { padding: 0 16px; }
+  .tabs { padding: 0 12px; gap: 0; }
+  .tab { padding: 0 7px; gap: 4px; }
   .activity-item { flex-wrap: wrap; }
   .activity-time { width: 100%; padding-left: 22px; }
   .status-chart { flex-direction: column; align-items: stretch; }

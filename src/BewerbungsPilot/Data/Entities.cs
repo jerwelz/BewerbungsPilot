@@ -18,7 +18,26 @@ public enum EventType
     StatusChanged,
     InterviewScheduled,
     DocumentAdded,
-    DocumentDeleted
+    DocumentDeleted,
+    InterviewRescheduled,
+    InterviewCompleted,
+    InterviewCancelled,
+    InterviewDeleted,
+    DeadlineChanged
+}
+
+public enum InterviewType
+{
+    Telefon,
+    Video,
+    VorOrt
+}
+
+public enum InterviewStatus
+{
+    Geplant,
+    Abgeschlossen,
+    Abgesagt
 }
 
 public enum DocumentCategory
@@ -52,6 +71,29 @@ public class JobApplication
 
     // Navigation property: all attached documents (1:n).
     public List<ApplicationDocument> Documents { get; set; } = new();
+
+    // Navigation property: all interviews (1:n).
+    public List<Interview> Interviews { get; set; } = new();
+}
+
+// One interview appointment for an application.
+public class Interview
+{
+    public int Id { get; set; }
+    public int JobApplicationId { get; set; }          // foreign key
+    public JobApplication? JobApplication { get; set; } // navigation property
+
+    // Local wall-clock time exactly as the user entered it (German time), WITHOUT
+    // time zone. "14:30" stays 14:30 – also across daylight saving changes.
+    public DateTime ScheduledAt { get; set; }
+    public InterviewType Type { get; set; }
+    public InterviewStatus Status { get; set; } = InterviewStatus.Geplant;
+    public string? Location { get; set; }      // address or meeting link
+    public string? ContactPerson { get; set; }
+    public string? Notes { get; set; }
+
+    public DateTime CreatedAt { get; set; }    // UTC, like all system timestamps
+    public DateTime UpdatedAt { get; set; }
 }
 
 // Metadata of one uploaded file. The file itself lives in storage/documents/
@@ -97,5 +139,12 @@ public static class StatusLabels
         [ApplicationStatus.Vorstellungsgespraech] = "Vorstellungsgespräch",
         [ApplicationStatus.Angebot] = "Angebot",
         [ApplicationStatus.Absage] = "Absage"
+    };
+
+    public static readonly Dictionary<InterviewType, string> InterviewTypes = new()
+    {
+        [InterviewType.Telefon] = "Telefon",
+        [InterviewType.Video] = "Video",
+        [InterviewType.VorOrt] = "Vor Ort"
     };
 }

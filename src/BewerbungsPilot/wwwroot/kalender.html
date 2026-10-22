@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kalender · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/calendar.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Kalender</h1>
+          <p class="page-subtitle">Vorstellungsgespräche und Bewerbungsfristen im Überblick.</p>
+        </div>
+        <button class="btn btn-primary" type="button" id="plan-interview">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+            stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          Gespräch planen
+        </button>
+      </header>
+
+      <div class="form-alert" id="calendar-error" role="alert"></div>
+
+      <div class="calendar-toolbar">
+        <div class="calendar-nav">
+          <button type="button" class="icon-btn" id="prev-month" aria-label="Vorheriger Monat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          </button>
+          <h2 class="calendar-month" id="month-label" aria-live="polite"></h2>
+          <button type="button" class="icon-btn" id="next-month" aria-label="Nächster Monat">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="today">Heute</button>
+        </div>
+        <ul class="calendar-legend" aria-label="Legende">
+          <li><span class="legend-swatch kind-Interview" aria-hidden="true"></span>Vorstellungsgespräch</li>
+          <li><span class="legend-swatch kind-Deadline" aria-hidden="true"></span>Bewerbungsfrist</li>
+        </ul>
+      </div>
+
+      <div class="calendar-layout">
+        <section class="card calendar-card" aria-label="Monatsansicht">
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>Mo</span><span>Di</span><span>Mi</span><span>Do</span><span>Fr</span><span>Sa</span><span>So</span>
+          </div>
+          <div class="calendar-grid" id="calendar-grid"></div>
+        </section>
+        <aside class="card day-panel" id="day-panel" aria-live="polite"></aside>
+      </div>
+
+      <!-- Narrow screens: list of all events of the month instead of the grid -->
+      <section class="agenda" id="agenda" aria-label="Termine des Monats"></section>
+    </main>
+  </div>
+</body>
+</html>

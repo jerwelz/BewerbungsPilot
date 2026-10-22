@@ -19,7 +19,7 @@ public class ApplicationService
     }
 
     private DateTime UtcNow => _clock.GetUtcNow().UtcDateTime;
-    private DateOnly Today => DateOnly.FromDateTime(_clock.GetLocalNow().DateTime);
+    public DateOnly Today => DateOnly.FromDateTime(_clock.GetLocalNow().DateTime);
 
     // Returns field name → error messages. An empty dictionary means "valid".
     // Used for both creating and editing.
@@ -56,12 +56,14 @@ public class ApplicationService
             .ToListAsync();
     }
 
-    // Loads one application including its history (oldest first) and documents (newest first).
+    // Loads one application including its history (oldest first), documents (newest first)
+    // and interviews (in date order).
     public async Task<JobApplication?> GetByIdAsync(int id)
     {
         return await _db.Applications
             .Include(a => a.Events.OrderBy(e => e.OccurredAt).ThenBy(e => e.Id))
             .Include(a => a.Documents.OrderByDescending(d => d.UploadedAt))
+            .Include(a => a.Interviews.OrderBy(i => i.ScheduledAt))
             .AsSplitQuery()
             .FirstOrDefaultAsync(a => a.Id == id);
     }
@@ -104,8 +106,11 @@ public class ApplicationService
             return null;
 
         var now = UtcNow;
+        var oldDeadline = application.Deadline;
         CopyInput(input, application, now);
         SetStatus(application, input.Status, now);
+        if (application.Deadline != oldDeadline)
+            application.Events.Add(DeadlineChangedEvent(oldDeadline, application.Deadline, now));
 
         await _db.SaveChangesAsync();
         return await GetByIdAsync(id);
@@ -150,6 +155,19 @@ public class ApplicationService
         });
         return true;
     }
+
+    private static ApplicationEvent DeadlineChangedEvent(DateOnly? oldDeadline, DateOnly? newDeadline, DateTime now) => new()
+    {
+        Type = EventType.DeadlineChanged,
+        Description = (oldDeadline, newDeadline) switch
+        {
+            (null, { } added) => $"Bewerbungsfrist festgelegt: {ScheduleRules.FormatDate(added)}",
+            ({ } removed, null) => $"Bewerbungsfrist entfernt (war {ScheduleRules.FormatDate(removed)})",
+            ({ } from, { } to) => $"Bewerbungsfrist geändert: {ScheduleRules.FormatDate(from)} → {ScheduleRules.FormatDate(to)}",
+            _ => "Bewerbungsfrist geändert"
+        },
+        OccurredAt = now
+    };
 
     // Rule: anything beyond "Entwurf" has been submitted, so it needs a submission date.
     // Returns true if the date was filled in.

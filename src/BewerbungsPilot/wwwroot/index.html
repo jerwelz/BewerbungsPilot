@@ -55,12 +55,25 @@
         </section>
       </div>
 
-      <section class="card" aria-labelledby="recent-title">
-        <header class="card-header">
-          <h2 class="card-title" id="recent-title">Letzte Aktivitäten</h2>
-        </header>
-        <ol class="activity-list" id="recent-activity"></ol>
-      </section>
+      <div class="dashboard-grid dashboard-grid-even">
+        <section class="card" aria-labelledby="upcoming-title">
+          <header class="card-header card-header-row">
+            <div>
+              <h2 class="card-title" id="upcoming-title">Anstehende Termine</h2>
+              <p class="card-subtitle">Geplante Gespräche und offene Bewerbungsfristen</p>
+            </div>
+            <a class="card-link" href="/kalender.html">Kalender öffnen</a>
+          </header>
+          <ol class="activity-list" id="upcoming-events"></ol>
+        </section>
+
+        <section class="card" aria-labelledby="recent-title">
+          <header class="card-header">
+            <h2 class="card-title" id="recent-title">Letzte Aktivitäten</h2>
+          </header>
+          <ol class="activity-list" id="recent-activity"></ol>
+        </section>
+      </div>
     </main>
   </div>
 </body>

@@ -85,6 +85,10 @@ function createCard(a) {
     .join('');
   const meta = [a.location && escapeHtml(a.location), a.appliedOn && `Beworben ${formatDate(a.appliedOn)}`]
     .filter(Boolean).join(' · ');
+  // Deadline only while it still matters (state from the server, see ScheduleRules).
+  const deadline = a.deadline && a.deadlineState !== 'Done'
+    ? `<p class="card-deadline deadline-text deadline-${a.deadlineState}">Frist ${formatDate(a.deadline)}${a.deadlineState === 'Overdue' ? ' · überfällig' : ''}</p>`
+    : '';
 
   const card = document.createElement('article');
   card.className = `kanban-card accent-${a.status}`;
@@ -94,6 +98,7 @@ function createCard(a) {
     <button type="button" class="card-title" aria-label="${escapeHtml(a.companyName)} – Details öffnen">${escapeHtml(a.companyName)}</button>
     <p class="card-position">${escapeHtml(a.position)}</p>
     ${meta ? `<p class="card-meta">${meta}</p>` : ''}
+    ${deadline}
     <div class="card-footer">
       <label class="visually-hidden" for="status-${a.id}">Status von ${escapeHtml(a.companyName)} ändern</label>
       <select class="status-select" id="status-${a.id}" data-status-select>${options}</select>

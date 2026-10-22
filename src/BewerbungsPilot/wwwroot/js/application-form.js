@@ -1,7 +1,10 @@
 // Create/edit dialog for an application. Built once and reused.
 
 import { api, ApiError } from './api.js';
-import { STATUSES, escapeHtml, statusLabel, formatDateTime, setButtonSaving, setButtonSaved, resetButton, wait } from './ui.js';
+import {
+  STATUSES, escapeHtml, statusLabel, formatDateTime, setButtonSaving, setButtonSaved, resetButton, wait,
+  clearFieldErrors, showFieldErrors,
+} from './ui.js';
 
 let dialog;
 let onSavedCallback;
@@ -90,30 +93,8 @@ function fillForm(form, application) {
   form.elements.status.value = application?.status ?? 'Entwurf';
 }
 
-function clearErrors() {
-  dialog.querySelector('[data-form-alert]').textContent = '';
-  dialog.querySelectorAll('.field').forEach((f) => {
-    f.classList.remove('has-error');
-    f.querySelector('.field-error').textContent = '';
-    f.querySelector('.input, .select, .textarea').removeAttribute('aria-invalid');
-  });
-}
-
-function showErrors(error) {
-  let firstInvalid = null;
-  for (const [name, messages] of Object.entries(error.errors)) {
-    const fieldEl = dialog.querySelector(`[data-field="${name}"]`);
-    if (!fieldEl) continue;
-    const control = fieldEl.querySelector('.input, .select, .textarea');
-    fieldEl.classList.add('has-error');
-    fieldEl.querySelector('.field-error').textContent = messages.join(' ');
-    control.setAttribute('aria-invalid', 'true');
-    control.setAttribute('aria-describedby', `f-${name}-error`);
-    firstInvalid ??= control;
-  }
-  if (firstInvalid) firstInvalid.focus();
-  else dialog.querySelector('[data-form-alert]').textContent = error.message;
-}
+const clearErrors = () => clearFieldErrors(dialog);
+const showErrors = (error) => showFieldErrors(dialog, error, 'f-');
 
 // ---------- Duplicate warning ----------
 

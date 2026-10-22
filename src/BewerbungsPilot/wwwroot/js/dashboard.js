@@ -2,7 +2,10 @@
 // which calculates them in DashboardService.cs. This file only displays them.
 
 import { api } from './api.js';
-import { renderSidebar, statusLabel, escapeHtml, formatDateTime, showToast } from './ui.js';
+import {
+  renderSidebar, statusLabel, escapeHtml, formatDateTime, showToast, formatDate, formatTime, statePill, labelOf, INTERVIEW_TYPES,
+} from './ui.js';
+import { dateBlock } from './schedule-tab.js';
 import { openApplicationForm } from './application-form.js';
 
 renderSidebar('overview');
@@ -34,10 +37,11 @@ document.getElementById('new-application').addEventListener('click', () => {
 
 async function loadDashboard() {
   try {
-    const data = await api.getDashboard();
+    const [data, upcoming] = await Promise.all([api.getDashboard(), api.getUpcoming()]);
     renderKpis(data);
     renderActivityChart(data.monthlyActivity);
     renderStatusChart(data);
+    renderUpcoming(upcoming);
     renderRecentActivity(data.recentActivity);
   } catch (error) {
     document.getElementById('dashboard-error').textContent = `Die Übersicht konnte nicht geladen werden: ${error.message}`;
@@ -183,6 +187,38 @@ function renderStatusChart(data) {
     },
     options,
   });
+}
+
+// ---------- Upcoming events (GET /api/calendar/upcoming, already in date order) ----------
+
+const weekdayShort = new Intl.DateTimeFormat('de-DE', { weekday: 'short' });
+
+function renderUpcoming(events) {
+  const list = document.getElementById('upcoming-events');
+  if (events.length === 0) {
+    list.innerHTML = `<li class="activity-empty">Keine anstehenden Termine. Sobald Sie ein Gespräch planen oder eine
+      Bewerbungsfrist für einen Entwurf festlegen, erscheint es hier.</li>`;
+    return;
+  }
+
+  list.innerHTML = events.map((e) => {
+    const isInterview = e.kind === 'Interview';
+    const title = isInterview ? `Vorstellungsgespräch · ${labelOf(INTERVIEW_TYPES, e.interviewType)}` : 'Bewerbungsfrist';
+    const day = new Date(`${e.date}T00:00:00`);
+    const when = `${weekdayShort.format(day)}, ${formatDate(e.date)}${isInterview ? `, ${formatTime(e.time)}` : ' (ganztägig)'}`;
+    return `
+      <li>
+        <a class="activity-item upcoming-item" href="/bewerbungen.html?id=${e.applicationId}&tab=schedule">
+          ${dateBlock(e.date, `date-block-sm kind-${e.kind}`)}
+          <span class="activity-main">
+            <span class="activity-text">${title}</span>
+            <span class="activity-meta">${escapeHtml(e.companyName)} · ${escapeHtml(e.position)}</span>
+            <span class="activity-meta">${when}</span>
+          </span>
+          ${statePill(e.kind, e.state)}
+        </a>
+      </li>`;
+  }).join('');
 }
 
 // ---------- Recent activity ----------

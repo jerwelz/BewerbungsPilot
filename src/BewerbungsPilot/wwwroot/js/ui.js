@@ -52,10 +52,85 @@ export function formatDateTime(isoTimestamp) {
   return isoTimestamp ? dateTimeFormat.format(new Date(isoTimestamp)) : '–';
 }
 
-// Today as "YYYY-MM-DD" in local time – the same format the API uses for dates.
+// A local Date → "YYYY-MM-DD" – the same format the API uses for dates.
+export function toIsoDate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export function todayIso() {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return toIsoDate(new Date());
+}
+
+// Interview times come as local wall-clock text without time zone ("2026-10-28T14:30:00").
+// new Date() reads such text as LOCAL time – exactly what we want, no conversion.
+const timeFormat = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+export function formatLocalDateTime(localText) {
+  const date = new Date(localText);
+  return `${dateFormat.format(date)}, ${timeFormat.format(date)} Uhr`;
+}
+
+// "14:30:00" (TimeOnly from the API) → "14:30 Uhr"
+export function formatTime(timeText) {
+  return timeText ? `${timeText.slice(0, 5)} Uhr` : '';
+}
+
+// ---------- Interviews & schedule states ----------
+
+export const INTERVIEW_TYPES = [
+  { value: 'Telefon', label: 'Telefon' },
+  { value: 'Video', label: 'Video' },
+  { value: 'VorOrt', label: 'Vor Ort' },
+];
+
+export const INTERVIEW_STATUSES = [
+  { value: 'Geplant', label: 'Geplant' },
+  { value: 'Abgeschlossen', label: 'Abgeschlossen' },
+  { value: 'Abgesagt', label: 'Abgesagt' },
+];
+
+export const labelOf = (list, value) => list.find((item) => item.value === value)?.label ?? value;
+
+// The states are calculated on the server (ScheduleRules.cs); these are only the German texts.
+const STATE_LABELS = {
+  Deadline: { Open: 'Offen', DueSoon: 'Läuft bald ab', Overdue: 'Überfällig', Done: 'Erledigt' },
+  Interview: { Open: 'Geplant', Overdue: 'Ergebnis offen', Done: 'Abgeschlossen', Cancelled: 'Abgesagt' },
+};
+
+export function statePill(kind, state) {
+  return `<span class="state-pill state-${state}">${STATE_LABELS[kind][state]}</span>`;
+}
+
+// ---------- Form errors (shared by the dialogs) ----------
+
+export function clearFieldErrors(root) {
+  root.querySelector('[data-form-alert]')?.replaceChildren();
+  root.querySelectorAll('.field').forEach((field) => {
+    field.classList.remove('has-error');
+    const error = field.querySelector('.field-error');
+    if (error) error.textContent = '';
+    field.querySelector('.input, .select, .textarea')?.removeAttribute('aria-invalid');
+  });
+}
+
+// Shows the server's German messages under the matching fields (by data-field name).
+export function showFieldErrors(root, error, idPrefix) {
+  let firstInvalid = null;
+  for (const [name, messages] of Object.entries(error.errors)) {
+    const field = root.querySelector(`[data-field="${name}"]`);
+    if (!field) continue;
+    const control = field.querySelector('.input, .select, .textarea');
+    field.classList.add('has-error');
+    field.querySelector('.field-error').textContent = messages.join(' ');
+    control.setAttribute('aria-invalid', 'true');
+    control.setAttribute('aria-describedby', `${idPrefix}${name}-error`);
+    firstInvalid ??= control;
+  }
+  if (firstInvalid) firstInvalid.focus();
+  else {
+    const alert = root.querySelector('[data-form-alert]');
+    if (alert) alert.textContent = error.message;
+  }
 }
 
 // ---------- Confirmation dialog ----------
@@ -95,14 +170,14 @@ const ICONS = {
   overview: '<path d="M3 3h7v9H3zM14 3h7v5h-7zM14 12h7v9h-7zM3 16h7v5H3z"/>',
   applications: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   pipeline: '<path d="M3 3h5v18H3zM10 3h5v12h-5zM17 3h4v8h-4z"/>',
-  schedule: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
 };
 
 const NAV_ITEMS = [
   { key: 'overview', label: 'Übersicht', href: '/', ready: true },
   { key: 'applications', label: 'Bewerbungen', href: '/bewerbungen.html', ready: true },
   { key: 'pipeline', label: 'Pipeline', href: '/pipeline.html', ready: true },
-  { key: 'schedule', label: 'Termine & Fristen', href: '/termine.html', ready: false },
+  { key: 'calendar', label: 'Kalender', href: '/kalender.html', ready: true },
 ];
 
 function icon(name, size = 18) {

@@ -23,6 +23,8 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ApplicationService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<DocumentService>();
+builder.Services.AddScoped<InterviewService>();
+builder.Services.AddScoped<ScheduleService>();
 
 // Send enums as text ("Beworben") instead of numbers in JSON.
 builder.Services.ConfigureHttpJsonOptions(options =>
@@ -44,5 +46,6 @@ app.UseStaticFiles();
 app.MapApplicationEndpoints();
 app.MapDashboardEndpoints();
 app.MapDocumentEndpoints();
+app.MapInterviewEndpoints();
 
 app.Run();

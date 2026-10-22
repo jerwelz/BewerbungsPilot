@@ -23,7 +23,7 @@ public static class ApplicationEndpoints
     private static async Task<IResult> GetAll(ApplicationService service)
     {
         var applications = await service.GetAllAsync();
-        return Results.Ok(applications.Select(ApplicationResponse.FromEntity));
+        return Results.Ok(applications.Select(a => ApplicationResponse.FromEntity(a, service.Today)));
     }
 
     // GET /api/applications/5   → application + history
@@ -32,7 +32,7 @@ public static class ApplicationEndpoints
         var application = await service.GetByIdAsync(id);
         return application is null
             ? NotFound()
-            : Results.Ok(ApplicationDetailResponse.FromEntity(application));
+            : Results.Ok(ApplicationDetailResponse.FromEntity(application, service.Today));
     }
 
     // GET /api/applications/duplicates?companyName=...&position=...&excludeId=5
@@ -52,7 +52,7 @@ public static class ApplicationEndpoints
             return Results.ValidationProblem(errors, title: "Bitte prüfen Sie Ihre Eingaben.");
 
         var created = await service.CreateAsync(input);
-        return Results.Created($"/api/applications/{created.Id}", ApplicationResponse.FromEntity(created));
+        return Results.Created($"/api/applications/{created.Id}", ApplicationResponse.FromEntity(created, service.Today));
     }
 
     // PUT /api/applications/5   (JSON body = ApplicationInput)
@@ -65,7 +65,7 @@ public static class ApplicationEndpoints
         var updated = await service.UpdateAsync(id, input);
         return updated is null
             ? NotFound()
-            : Results.Ok(ApplicationDetailResponse.FromEntity(updated));
+            : Results.Ok(ApplicationDetailResponse.FromEntity(updated, service.Today));
     }
 
     // PATCH /api/applications/5/status   (JSON body: { "status": "InPruefung" })
@@ -79,7 +79,7 @@ public static class ApplicationEndpoints
         var updated = await service.ChangeStatusAsync(id, input.Status);
         return updated is null
             ? NotFound()
-            : Results.Ok(ApplicationResponse.FromEntity(updated));
+            : Results.Ok(ApplicationResponse.FromEntity(updated, service.Today));
     }
 
     // DELETE /api/applications/5

@@ -54,6 +54,12 @@ export const api = {
     return request('POST', `/api/applications/${applicationId}/documents`, form);
   },
   deleteDocument: (id) => request('DELETE', `/api/documents/${id}`),
+  createInterview: (applicationId, input) => request('POST', `/api/applications/${applicationId}/interviews`, input),
+  updateInterview: (id, input) => request('PUT', `/api/interviews/${id}`, input),
+  deleteInterview: (id) => request('DELETE', `/api/interviews/${id}`),
+  getCalendar: (from, to) => request('GET', `/api/calendar?from=${from}&to=${to}`), // "YYYY-MM-DD"
+  getUpcoming: () => request('GET', '/api/calendar/upcoming'),
+
   previewUrl: (id) => `/api/documents/${id}/preview`,
   downloadUrl: (id) => `/api/documents/${id}/download`,
 };

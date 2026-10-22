@@ -3,9 +3,12 @@
 // and returning focus to the opening button for free.
 
 import { api } from './api.js';
-import { statusBadge, statusLabel, formatDate, formatDateTime, escapeHtml, showToast, confirmDialog } from './ui.js';
+import { statusBadge, statusLabel, formatDate, formatDateTime, escapeHtml, showToast, confirmDialog, statePill } from './ui.js';
 import { openApplicationForm } from './application-form.js';
 import { documentsHtml, setUpDocumentsTab } from './documents.js';
+import { scheduleHtml, setUpScheduleTab } from './schedule-tab.js';
+
+const TABS = ['overview', 'schedule', 'documents', 'history'];
 
 let panel;
 let current = null; // { application, events } currently shown
@@ -31,7 +34,8 @@ function buildPanel() {
 
 // Opens the panel for an application.
 // callbacks.onChanged(application) – after editing; callbacks.onDeleted(id) – after deleting.
-export async function openDetailPanel(id, { onChanged, onDeleted } = {}) {
+// tab: which tab to show first ('overview', 'schedule', 'documents', 'history').
+export async function openDetailPanel(id, { onChanged, onDeleted, tab = 'overview' } = {}) {
   if (!panel) buildPanel();
   callbacks = { onChanged, onDeleted };
 
@@ -43,13 +47,13 @@ export async function openDetailPanel(id, { onChanged, onDeleted } = {}) {
     return;
   }
 
-  render('overview');
+  render(TABS.includes(tab) ? tab : 'overview');
   if (!panel.open) panel.showModal();
   panel.querySelector('[data-close]').focus();
 }
 
 function render(activeTab, highlightDocumentId) {
-  const { application: a, events, documents } = current;
+  const { application: a, events, documents, interviews } = current;
 
   panel.innerHTML = `
     <header class="panel-header">
@@ -76,6 +80,7 @@ function render(activeTab, highlightDocumentId) {
 
     <div class="tabs" role="tablist" aria-label="Bereiche">
       ${tabButton('overview', 'Überblick', activeTab)}
+      ${tabButton('schedule', `Termine <span class="tab-count">${interviews.length}</span>`, activeTab)}
       ${tabButton('documents', `Dokumente <span class="tab-count">${documents.length}</span>`, activeTab)}
       ${tabButton('history', `Verlauf <span class="tab-count">${events.length}</span>`, activeTab)}
     </div>
@@ -83,6 +88,9 @@ function render(activeTab, highlightDocumentId) {
     <div class="panel-body">
       <section class="tab-panel" role="tabpanel" id="tab-overview" aria-labelledby="tab-btn-overview"${activeTab === 'overview' ? '' : ' hidden'}>
         ${overviewHtml(a)}
+      </section>
+      <section class="tab-panel" role="tabpanel" id="tab-schedule" aria-labelledby="tab-btn-schedule"${activeTab === 'schedule' ? '' : ' hidden'}>
+        ${scheduleHtml(a, interviews)}
       </section>
       <section class="tab-panel" role="tabpanel" id="tab-documents" aria-labelledby="tab-btn-documents"${activeTab === 'documents' ? '' : ' hidden'}>
         ${documentsHtml(documents, highlightDocumentId)}
@@ -97,6 +105,10 @@ function render(activeTab, highlightDocumentId) {
   panel.querySelector('[data-delete]').addEventListener('click', deleteCurrent);
   setUpTabs();
   setUpDocumentsTab(panel.querySelector('#tab-documents'), a, documents, (highlightId) => reload('documents', highlightId));
+  setUpScheduleTab(panel.querySelector('#tab-schedule'), a, interviews, {
+    onChanged: () => reload('schedule'),
+    onEditApplication: editCurrent,
+  });
 }
 
 // Reloads the application (e.g. after a document upload) and shows the given tab again.
@@ -156,7 +168,7 @@ function overviewHtml(a) {
       ${item('Status', escapeHtml(statusLabel(a.status)))}
       ${item('Ort', escapeHtml(a.location ?? '–'))}
       ${item('Beworben am', formatDate(a.appliedOn))}
-      ${item('Bewerbungsfrist', formatDate(a.deadline))}
+      ${item('Bewerbungsfrist', `${formatDate(a.deadline)}${a.deadlineState ? ` ${statePill('Deadline', a.deadlineState)}` : ''}`)}
       ${item('Stellenanzeige', link)}
     </dl>
 

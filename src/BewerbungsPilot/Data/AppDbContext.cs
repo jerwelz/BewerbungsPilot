@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<JobApplication> Applications => Set<JobApplication>();
     public DbSet<ApplicationEvent> ApplicationEvents => Set<ApplicationEvent>();
     public DbSet<ApplicationDocument> Documents => Set<ApplicationDocument>();
+    public DbSet<Interview> Interviews => Set<Interview>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +38,27 @@ public class AppDbContext : DbContext
                   .WithOne(d => d.JobApplication)
                   .HasForeignKey(d => d.JobApplicationId)
                   .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Interview>(entity =>
+        {
+            // Deleting an application deletes its interviews.
+            entity.HasOne(i => i.JobApplication)
+                  .WithMany(a => a.Interviews)
+                  .HasForeignKey(i => i.JobApplicationId)
+                  .OnDelete(DeleteBehavior.Cascade);
+
+            // Local wall-clock time: overrides the "everything is UTC" convention below.
+            entity.Property(i => i.ScheduledAt).HasConversion(
+                value => value,
+                value => DateTime.SpecifyKind(value, DateTimeKind.Unspecified));
+            entity.HasIndex(i => i.ScheduledAt);
+
+            entity.Property(i => i.Type).HasConversion<string>().HasMaxLength(30);
+            entity.Property(i => i.Status).HasConversion<string>().HasMaxLength(30);
+            entity.Property(i => i.Location).HasMaxLength(500);
+            entity.Property(i => i.ContactPerson).HasMaxLength(200);
+            entity.Property(i => i.Notes).HasMaxLength(4000);
         });
 
         modelBuilder.Entity<ApplicationDocument>(entity =>
@@ -63,6 +85,7 @@ public class AppDbContext : DbContext
     {
         // SQLite stores no time zone. We always save UTC and mark values as UTC
         // when reading them back, so the browser can convert them to local time.
+        // Exception: Interview.ScheduledAt (local time, configured above).
         configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
     }
 
