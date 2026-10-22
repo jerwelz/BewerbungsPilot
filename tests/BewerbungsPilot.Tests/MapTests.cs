@@ -279,9 +279,11 @@ public class MapTests : IDisposable
             insert.ExecuteNonQuery();
         }
 
-        migrator.Migrate(); // apply AddMapLocation
+        migrator.Migrate(); // apply AddMapLocation (and all later migrations)
 
-        var app = db.Applications.Single();
+        // Since M9 rows from before user accounts have no owner and are hidden by the query filter.
+        var app = db.Applications.IgnoreQueryFilters().Single();
+        Assert.Null(app.OwnerId);
         Assert.Equal(("Altfirma GmbH", "Kiel", "alte Notiz", ApplicationStatus.Beworben),
             (app.CompanyName, app.Location, app.Notes, app.Status));
         Assert.Equal(LocationPrecision.Unknown, app.LocationPrecision);

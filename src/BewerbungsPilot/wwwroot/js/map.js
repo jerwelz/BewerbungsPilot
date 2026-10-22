@@ -8,10 +8,11 @@ import { api } from './api.js';
 import { renderSidebar, STATUSES, statusLabel, statusBadge, escapeHtml, matchesSearch, showToast } from './ui.js';
 import { openDetailPanel } from './detail-panel.js';
 import { openPlaceDialog, PRECISIONS } from './place-dialog.js';
+import { requireUser, originKey } from './session.js';
 
 renderSidebar('places');
 
-const ORIGIN_KEY = 'bewerbungspilot.origin';
+let originStorageKey = null; // per user, set once the login is confirmed (see the end of this file)
 const GERMANY = [51.16, 10.45];
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobile = window.matchMedia('(max-width: 860px)');
@@ -19,7 +20,7 @@ const mobile = window.matchMedia('(max-width: 860px)');
 const PRECISION_SHORT = { Exact: 'Genaue Adresse', Approximate: 'Ungefähr', City: 'Stadt / Ort', Remote: 'Remote', Unknown: 'Ohne Position' };
 const ROUTES = [['transit', 'ÖPNV'], ['driving', 'Auto'], ['bicycling', 'Fahrrad'], ['walking', 'Zu Fuß']];
 
-const state = { items: [], hasOrigin: false, origin: loadOrigin(), selectedId: null, search: '', status: '', precision: 'all', sort: 'company' };
+const state = { items: [], hasOrigin: false, origin: null, selectedId: null, search: '', status: '', precision: 'all', sort: 'company' };
 
 const el = {
   layout: document.getElementById('map-layout'),
@@ -36,7 +37,7 @@ const el = {
 
 function loadOrigin() {
   try {
-    const stored = JSON.parse(localStorage.getItem(ORIGIN_KEY));
+    const stored = JSON.parse(localStorage.getItem(originStorageKey));
     return stored && Number.isFinite(stored.latitude) && Number.isFinite(stored.longitude) ? stored : null;
   } catch {
     return null;
@@ -46,8 +47,8 @@ function loadOrigin() {
 function saveOrigin(origin) {
   state.origin = origin;
   try {
-    if (origin) localStorage.setItem(ORIGIN_KEY, JSON.stringify(origin));
-    else localStorage.removeItem(ORIGIN_KEY);
+    if (origin) localStorage.setItem(originStorageKey, JSON.stringify(origin));
+    else localStorage.removeItem(originStorageKey);
   } catch {
     showToast('Der Startpunkt konnte in diesem Browser nicht gespeichert werden.', 'error');
   }
@@ -443,4 +444,8 @@ async function load() {
 
 renderLegend();
 el.list.innerHTML = '<p class="tl-state">Standorte werden geladen …</p>';
-load();
+requireUser().then((user) => {
+  originStorageKey = originKey(user.id);
+  state.origin = loadOrigin();
+  load();
+}).catch(() => { /* not logged in: redirected to the login page */ });

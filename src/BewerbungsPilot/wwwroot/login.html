@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Anmelden · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/auth.js"></script>
+</head>
+<body>
+  <main class="auth-page">
+    <section class="auth-card" aria-labelledby="auth-title">
+      <span class="brand">
+        <span class="brand-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+        </span>
+        <span class="brand-name">BewerbungsPilot</span>
+      </span>
+      <div>
+        <h1 class="auth-title" id="auth-title">Anmelden</h1>
+        <p class="auth-subtitle">Ihre Bewerbungen sind nur für Sie sichtbar.</p>
+      </div>
+
+      <div class="auth-notice" id="auth-notice" role="status"></div>
+
+      <form class="auth-form" id="login-form" data-auth="login" novalidate>
+        <div class="form-alert" data-form-alert role="alert"></div>
+        <div class="field" data-field="email">
+          <label for="a-email">E-Mail-Adresse</label>
+          <input class="input" id="a-email" name="email" type="email" autocomplete="username" required autofocus>
+          <div class="field-error" id="a-email-error"></div>
+        </div>
+        <div class="field" data-field="password">
+          <label for="a-password">Passwort</label>
+          <input class="input" id="a-password" name="password" type="password" autocomplete="current-password" required>
+          <div class="field-error" id="a-password-error"></div>
+        </div>
+        <label class="auth-check"><input type="checkbox" name="rememberMe"> Angemeldet bleiben (14 Tage, nur auf eigenen Geräten)</label>
+        <button class="btn btn-primary" type="submit">Anmelden</button>
+      </form>
+
+      <p class="auth-footer" id="register-link" hidden>Noch kein Konto? <a href="/registrieren.html">Registrieren</a></p>
+    </section>
+  </main>
+</body>
+</html>

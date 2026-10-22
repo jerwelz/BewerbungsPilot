@@ -1,5 +1,8 @@
 // Shared UI helpers: sidebar, status labels, formatting, toasts, button feedback.
 
+import { requireUser, logout } from './session.js';
+import { openPasswordDialog } from './password-dialog.js';
+
 export const STATUSES = [
   { value: 'Entwurf', label: 'Entwurf' },
   { value: 'Beworben', label: 'Beworben' },
@@ -174,6 +177,9 @@ const ICONS = {
   analysis: '<path d="M4 20V4M4 20h16"/><path d="M8 8h6M8 12h10M8 16h4"/>',
   places: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  user: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>',
+  key: '<circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3"/>',
+  logout: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
 };
 
 const NAV_ITEMS = [
@@ -191,6 +197,8 @@ function icon(name, size = 18) {
     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[name]}</svg>`;
 }
 
+// Every app page calls this first. It also checks the login (session.js): without a valid
+// session the page is replaced by the login page before any data is shown.
 export function renderSidebar(activeKey) {
   const links = NAV_ITEMS.map((item) => {
     const current = item.key === activeKey ? ' aria-current="page"' : '';
@@ -207,7 +215,21 @@ export function renderSidebar(activeKey) {
       </span>
       <span class="brand-name">BewerbungsPilot</span>
     </a>
-    <nav class="nav" aria-label="Hauptnavigation">${links}</nav>`;
+    <nav class="nav" aria-label="Hauptnavigation">${links}</nav>
+    <div class="sidebar-account">
+      <p class="sidebar-user">${icon('user', 16)}<span data-user-email>…</span></p>
+      <button class="nav-link" type="button" data-change-password aria-label="Passwort ändern">${icon('key')}<span>Passwort ändern</span></button>
+      <button class="nav-link" type="button" data-logout aria-label="Abmelden">${icon('logout')}<span>Abmelden</span></button>
+    </div>`;
+
+  const sidebar = document.getElementById('sidebar');
+  sidebar.querySelector('[data-change-password]').addEventListener('click', openPasswordDialog);
+  sidebar.querySelector('[data-logout]').addEventListener('click', logout);
+  requireUser().then((user) => {
+    const email = sidebar.querySelector('[data-user-email]');
+    email.textContent = user.email;
+    email.title = user.email;
+  }).catch(() => { /* not logged in: requireUser has already redirected */ });
 }
 
 // ---------- Toasts ----------

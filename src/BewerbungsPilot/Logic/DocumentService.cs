@@ -6,8 +6,8 @@ namespace BewerbungsPilot.Logic;
 
 // Business rules for documents: validation, metadata in SQLite, files via DocumentStorage.
 //
-// Access to a document always goes through GetAsync(id). When user accounts are
-// added later, the ownership check belongs there – the storage stays the same.
+// Access to a document always goes through GetAsync(id), which only finds documents of
+// the logged-in user (query filter in AppDbContext) – the storage stays the same.
 public class DocumentService
 {
     public const long MaxFileSizeBytes = 10 * 1024 * 1024; // 10 MB

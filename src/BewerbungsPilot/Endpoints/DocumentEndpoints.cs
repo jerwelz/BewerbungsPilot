@@ -7,8 +7,8 @@ namespace BewerbungsPilot.Endpoints;
 // HTTP layer for documents. Files are ONLY reachable through these endpoints –
 // storage/documents/ is outside wwwroot and never served as static files.
 //
-// NOTE: There is no login yet. This is a local, single-user application; these
-// endpoints must not be exposed publicly until authentication exists.
+// Login and ownership: every document is loaded through the per-user query filter
+// (AppDbContext), so another user's document id simply answers 404.
 public static class DocumentEndpoints
 {
     // Slightly above 10 MB, so a file of 10–12 MB still gets the friendly German

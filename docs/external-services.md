@@ -1,7 +1,7 @@
 # External services and privacy (page "Standorte")
 
-BewerbungsPilot is a **local, single-user application without login**. Run it only on your own
-computer (`localhost`). Everything except the services listed below stays on this computer.
+BewerbungsPilot is a **local application with user accounts** (since M9, see `docs/security.md`).
+Everything except the services listed below stays on the computer that runs it.
 
 ## Services used
 
@@ -18,12 +18,13 @@ No API keys, no paid services, no accounts.
 - **Confirmed employer positions** (coordinates, precision, label) are stored in the local SQLite
   database (`storage/`, not in Git). They are only saved after the user confirms them.
 - **Starting point** (e.g. home town or a city considered for relocation) is stored only in the
-  browser (`localStorage`, key `bewerbungspilot.origin`). To calculate distances it is sent to the
+  browser (`localStorage`, key `bewerbungspilot.origin.<userId>` – per user, removed on logout). To calculate distances it is sent to the
   local server in the request **body** of `POST /api/map/query` – never in a URL – and is neither
   stored nor logged there.
 - **Logging:** `System.Net.Http.HttpClient` is set to `Warning` in `appsettings.json`, so geocoding
   URLs (which contain the search text) are not written to the log.
-- **Map endpoints** return no notes, documents, contacts or job advertisement links.
+- **Map endpoints** return no notes, documents, contacts or job advertisement links, and only the
+  logged-in user's applications. Place search requires a login; its cache is kept per user.
 - **Distances** are straight-line distances ("Luftlinie", Haversine formula). BewerbungsPilot does not
   calculate driving distances or travel times.
 
@@ -39,5 +40,6 @@ location dialog. If map tiles cannot be loaded, the list, distances and route li
 
 ## Before any public deployment
 
-The document and map endpoints have no access control. A public demo must use fictional data only
-and must not contain real addresses or starting points.
+All endpoints require a login and only return the user's own data. The mandatory steps before
+exposing the application to the internet (HTTPS, cookies, proxy, backups, logging) are listed in
+`docs/security.md`, section 8.

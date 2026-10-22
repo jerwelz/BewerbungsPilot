@@ -63,6 +63,14 @@ public enum DocumentCategory
 public class JobApplication
 {
     public int Id { get; set; }
+
+    // The user account this application belongs to (AspNetUsers.Id). Set automatically when
+    // the application is created (AppDbContext). NULL = data from before user accounts existed,
+    // visible to nobody until claimed with "claim-legacy-data" (LegacyDataClaim.cs).
+    // History, documents and interviews have no owner of their own: they belong to the
+    // owner of their application.
+    public string? OwnerId { get; set; }
+
     public string CompanyName { get; set; } = "";
     public string Position { get; set; } = "";
     public string? Location { get; set; }

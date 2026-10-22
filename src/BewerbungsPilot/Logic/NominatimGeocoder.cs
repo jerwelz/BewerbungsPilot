@@ -9,7 +9,7 @@ namespace BewerbungsPilot.Logic;
 // "Suchen". Usage policy: https://operations.osmfoundation.org/policies/nominatim/
 // - at most 1 request per second (enforced below for this whole application)
 // - identifying User-Agent (configured in appsettings.json, "Geocoding")
-// - results are cached; no automatic or bulk requests, no search-as-you-type
+// - results are cached (per user); no automatic or bulk requests, no search-as-you-type
 // - attribution "© OpenStreetMap-Mitwirkende" is shown with the results
 // Search texts are not logged (see the HttpClient log level in appsettings.json).
 public class NominatimGeocoder
@@ -22,8 +22,13 @@ public class NominatimGeocoder
     private static readonly ConcurrentDictionary<string, List<GeocodeResult>> Cache = new();
 
     private readonly HttpClient _http;
+    private readonly CurrentUser _user;
 
-    public NominatimGeocoder(HttpClient http) => _http = http;
+    public NominatimGeocoder(HttpClient http, CurrentUser user)
+    {
+        _http = http;
+        _user = user;
+    }
 
     public static string? ValidateQuery(string? query)
     {
@@ -35,7 +40,8 @@ public class NominatimGeocoder
 
     public async Task<List<GeocodeResult>> SearchAsync(string query, CancellationToken cancellationToken)
     {
-        var key = query.Trim().ToLowerInvariant();
+        // Cache per user: nobody can find out (e.g. by timing) what another user searched for.
+        var key = $"{_user.UserId}|{query.Trim().ToLowerInvariant()}";
         if (Cache.TryGetValue(key, out var cached))
             return cached;
 

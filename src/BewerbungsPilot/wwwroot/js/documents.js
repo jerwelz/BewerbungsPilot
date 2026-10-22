@@ -3,7 +3,7 @@
 // The real validation happens on the server (DocumentService.ValidateUpload);
 // the checks here only give faster feedback.
 
-import { api, ApiError } from './api.js';
+import { api, ApiError, redirectToLogin } from './api.js';
 import { escapeHtml, formatDateTime, showToast, confirmDialog, setButtonSaving, setButtonSaved, resetButton, wait } from './ui.js';
 
 export const CATEGORIES = [
@@ -291,6 +291,7 @@ async function openPreview(doc) {
   } catch {
     response = null;
   }
+  if (response?.status === 401) return redirectToLogin();
   if (!response?.ok) {
     status.classList.add('is-error');
     status.textContent = 'Die Vorschau konnte nicht geladen werden. Die Datei ist möglicherweise nicht mehr vorhanden.';

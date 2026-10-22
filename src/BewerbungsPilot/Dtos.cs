@@ -224,3 +224,15 @@ public record MonthCount(int Year, int Month, int Count);
 public record ActivityItem(
     int ApplicationId, string CompanyName, string Position,
     EventType Type, string Description, DateTime OccurredAt);
+
+// ---------- Accounts ----------
+
+// POST /api/auth/register, POST /api/auth/login
+public record RegisterInput(string? Email, string? Password);
+public record LoginInput(string? Email, string? Password, bool RememberMe);
+// POST /api/auth/password
+public record PasswordChangeInput(string? CurrentPassword, string? NewPassword);
+
+public record UserResponse(string Id, string Email);
+// GET /api/auth/antiforgery → token for the X-CSRF-TOKEN header, and for whom it is valid
+public record AntiforgeryResponse(string Token, bool AllowRegistration, string? UserId);
