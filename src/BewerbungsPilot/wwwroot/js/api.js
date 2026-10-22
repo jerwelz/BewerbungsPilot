@@ -62,6 +62,11 @@ export const api = {
 
   // from/to are optional "YYYY-MM-DD"
   getTimeline: (from, to) => request('GET', from ? `/api/timeline?from=${from}&to=${to}` : '/api/timeline'),
+  // { from, to, cutoff } – each optional "YYYY-MM-DD"
+  getAnalysis: (params) => {
+    const query = new URLSearchParams(Object.entries(params).filter(([, value]) => value));
+    return request('GET', `/api/analysis?${query}`);
+  },
   getWaiting: (sort) => request('GET', `/api/waiting?sort=${sort}`), // SinceSubmission | SinceStatusChange
 
   previewUrl: (id) => `/api/documents/${id}/preview`,

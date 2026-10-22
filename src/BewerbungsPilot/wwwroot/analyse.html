@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analyse · BewerbungsPilot</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/analysis.js"></script>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" id="sidebar"></aside>
+
+    <main class="main">
+      <header class="page-header">
+        <div>
+          <h1 class="page-title">Analyse</h1>
+          <p class="page-subtitle">Wie weit sind Ihre Bewerbungen nachweislich gekommen?</p>
+        </div>
+      </header>
+
+      <div class="toolbar analysis-toolbar">
+        <div class="field">
+          <label for="an-period">Bewerbungsdatum im Zeitraum</label>
+          <select class="select" id="an-period">
+            <option value="all">Gesamter Zeitraum</option>
+            <option value="30">Letzte 30 Tage</option>
+            <option value="90">Letzte 90 Tage</option>
+            <option value="year">Dieses Jahr</option>
+            <option value="custom">Eigener Zeitraum …</option>
+          </select>
+        </div>
+        <div class="field" data-custom hidden>
+          <label for="an-from">Von</label>
+          <input class="input" id="an-from" type="date">
+        </div>
+        <div class="field" data-custom hidden>
+          <label for="an-to">Bis</label>
+          <input class="input" id="an-to" type="date">
+        </div>
+        <div class="field">
+          <label for="an-cutoff">Auswertungsstand</label>
+          <input class="input" id="an-cutoff" type="date" aria-describedby="an-cutoff-hint">
+        </div>
+      </div>
+      <p class="analysis-hint" id="an-cutoff-hint">Es zählen nur Einträge, die bis zum Ende des Auswertungsstands erfasst wurden.</p>
+
+      <div class="form-alert" id="an-error" role="alert"></div>
+      <p class="analysis-context" id="an-context" aria-live="polite"></p>
+
+      <section class="analysis-stats" id="an-stats" aria-label="Überblick"></section>
+
+      <section class="card analysis-card" aria-labelledby="an-milestones-title">
+        <header class="card-header">
+          <h2 class="card-title" id="an-milestones-title">Erreichte Meilensteine</h2>
+          <p class="card-subtitle">Jede Bewerbung zählt pro Meilenstein höchstens einmal. Auswählen, um die gezählten Bewerbungen zu sehen.</p>
+        </header>
+        <div class="milestones" id="an-milestones"></div>
+        <div class="analysis-notes" id="an-notes"></div>
+      </section>
+
+      <section class="card drill" id="an-drill" hidden aria-labelledby="an-drill-title"></section>
+
+      <details class="card method">
+        <summary>So wird gezählt</summary>
+        <ul>
+          <li><strong>Grundlage</strong> sind Bewerbungen, deren <em>eingetragenes Bewerbungsdatum</em> im gewählten Zeitraum und nicht nach dem Auswertungsstand liegt. Bewerbungen ohne Bewerbungsdatum werden separat genannt – das Anlagedatum wird nicht ersatzweise verwendet.</li>
+          <li><strong>Nachweise</strong> sind nur Einträge in BewerbungsPilot, die bis zum Auswertungsstand <em>erfasst</em> wurden. Der Erfassungszeitpunkt ist nicht unbedingt der Zeitpunkt, zu dem das Unternehmen gehandelt hat.</li>
+          <li><strong>Vorstellungsgespräch erreicht:</strong> Status „Vorstellungsgespräch“ wurde erfasst, oder ein Gespräch (geplant oder abgeschlossen) wurde eingetragen. Abgesagte Gespräche zählen nicht. Mehrere Gespräche zählen einmal, eine spätere Absage ändert nichts.</li>
+          <li><strong>Angebot erhalten:</strong> Status „Angebot“ wurde erfasst. Ein Angebot ohne eingetragenes Gespräch ergibt kein Gespräch.</li>
+          <li><strong>Fehlende Nachweise</strong> bedeuten „nicht dokumentiert“, nicht „nicht passiert“. Die Meilensteine werden unabhängig gezählt; es gibt keine Erfolgswahrscheinlichkeiten oder Prognosen.</li>
+          <li><strong>Prozentwerte</strong> erscheinen erst ab 10 Bewerbungen und immer zusammen mit der absoluten Zahl.</li>
+        </ul>
+      </details>
+    </main>
+  </div>
+</body>
+</html>

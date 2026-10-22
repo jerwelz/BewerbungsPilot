@@ -143,6 +143,39 @@ public record WaitingItem(
     DateTime? LastStatusChangeAt,   // UTC recording time of the last status entry
     int? DaysSinceStatusChange);    // null: no recorded status entry
 
+// ---------- Analyse (historical milestones) ----------
+// Compact: no notes, locations, contacts or documents.
+
+public record AnalysisResponse(
+    DateOnly? From, DateOnly? To,           // submission period (entered submission dates)
+    DateOnly CutoffDate, DateTime Cutoff,   // observation cutoff: evidence recorded until then (UTC)
+    int CohortSize,
+    int MinCohortForPercent,
+    List<MilestoneResult> Milestones,
+    OutcomeSummary Outcomes,
+    int IncompleteHistoryCount,
+    List<AnalysisApplication> Applications, // the cohort – the drill-down filters this list
+    WithoutSubmissionDate WithoutSubmissionDate);
+
+// ApplicationIds = exactly the applications counted (Count == ApplicationIds.Count).
+// Percent is null for small cohorts (see AnalysisService.MinCohortForPercent).
+public record MilestoneResult(Milestone Milestone, int Count, int? Percent, List<int> ApplicationIds);
+
+// Status at the cutoff. Unknown = no status recorded by then.
+public record OutcomeSummary(int Open, int Offer, int Rejected, int Unknown);
+
+public record AnalysisApplication(
+    int Id, string CompanyName, string Position, ApplicationStatus CurrentStatus,
+    ApplicationStatus? StatusAtCutoff, DateOnly? AppliedOn, bool HistoryComplete, List<Evidence> Evidence);
+
+// One piece of evidence. RecordedAt: UTC time it was recorded; Date: entered date (submission);
+// AppointmentAt: local interview time.
+public record Evidence(
+    Milestone Milestone, EvidenceSource Source, DateTime? RecordedAt, DateOnly? Date,
+    ApplicationStatus? Status, DateTime? AppointmentAt, InterviewStatus? InterviewStatus);
+
+public record WithoutSubmissionDate(int Drafts, int Other, List<AnalysisApplication> Applications);
+
 // ---------- Dashboard ----------
 
 public record DashboardResponse(

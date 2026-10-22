@@ -171,6 +171,7 @@ const ICONS = {
   applications: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
   pipeline: '<path d="M3 3h5v18H3zM10 3h5v12h-5zM17 3h4v8h-4z"/>',
   timeline: '<path d="M3 6h9M8 12h13M3 18h7"/><circle cx="12" cy="6" r="0.5"/>',
+  analysis: '<path d="M4 20V4M4 20h16"/><path d="M8 8h6M8 12h10M8 16h4"/>',
   calendar: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
 };
 
@@ -179,6 +180,7 @@ const NAV_ITEMS = [
   { key: 'applications', label: 'Bewerbungen', href: '/bewerbungen.html', ready: true },
   { key: 'pipeline', label: 'Pipeline', href: '/pipeline.html', ready: true },
   { key: 'timeline', label: 'Verlauf', href: '/verlauf.html', ready: true },
+  { key: 'analysis', label: 'Analyse', href: '/analyse.html', ready: true },
   { key: 'calendar', label: 'Kalender', href: '/kalender.html', ready: true },
 ];
 

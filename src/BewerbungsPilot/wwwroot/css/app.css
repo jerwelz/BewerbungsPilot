@@ -1259,6 +1259,94 @@ body:has(dialog[open]) { overflow: hidden; }
   .tl-detail-columns { grid-template-columns: minmax(0, 1fr); }
 }
 
+/* ---------- Analyse (historical milestones) ---------- */
+
+.analysis-toolbar { align-items: flex-end; margin-bottom: 6px; }
+.analysis-toolbar .field { flex: 0 1 220px; }
+.analysis-toolbar .field label { font-size: 12.5px; color: var(--color-muted); }
+.analysis-hint { margin: 0 0 14px; font-size: 12.5px; color: var(--color-muted); }
+.analysis-context { margin: 0 0 14px; font-size: 13.5px; }
+
+.analysis-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+.analysis-stat { padding: 14px 16px; }
+.analysis-stat .kpi-value { margin: 0 0 2px; font-size: 24px; }
+.analysis-stat .kpi-label { font-weight: 600; color: var(--color-text); }
+
+.analysis-card { margin-bottom: 16px; }
+.milestones { display: flex; flex-direction: column; gap: 6px; padding: 12px 10px 4px; }
+
+.milestone {
+  display: flex; flex-direction: column; gap: 6px;
+  width: 100%;
+  padding: 12px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: none;
+  font: inherit; color: inherit; text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease), border-color var(--duration-fast) var(--ease);
+}
+.milestone:hover { background: #F8FAFC; border-color: var(--color-border); }
+.milestone.is-selected { background: var(--color-primary-soft); border-color: var(--color-primary); }
+.milestone-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.milestone-label { font-weight: 600; font-size: 14.5px; }
+.milestone-count { font-size: 14px; color: var(--color-muted); white-space: nowrap; }
+.milestone-count strong { font-size: 20px; font-weight: 650; color: var(--color-text); margin-right: 2px; }
+.milestone-percent { font-size: 12.5px; }
+
+.milestone-track {
+  position: relative;
+  height: 14px;
+  border-radius: 999px;
+  background: repeating-linear-gradient(90deg, #F1F5F9 0 6px, #E9EEF4 6px 7px); /* subtle ticks: the whole cohort */
+  overflow: hidden;
+}
+.milestone-fill {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  min-width: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width var(--duration-slow) var(--ease);
+}
+.milestone-meta { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; color: var(--color-muted); }
+.milestone-rule { color: #64748B; }
+
+.analysis-notes { padding: 4px 20px 16px; font-size: 13px; color: #92400E; }
+.analysis-notes p { margin: 6px 0 0; }
+.link-button {
+  padding: 0; border: 0; background: none;
+  font: inherit; font-weight: 600; color: var(--color-primary);
+  text-decoration: underline; cursor: pointer;
+}
+
+.drill { margin-bottom: 16px; padding: 16px 18px; }
+.drill-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.drill-header .card-title:focus { outline: none; }
+.drill-header .card-title:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.drill-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.drill-item {
+  display: flex; justify-content: space-between; gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.drill-main { min-width: 0; flex: 1; }
+.drill-company { font-weight: 600; }
+.drill-position { font-size: 13px; color: var(--color-muted); }
+.drill-evidence { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+.drill-evidence li + li { margin-top: 2px; }
+.drill-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; text-align: right; }
+.drill-cutoff { font-size: 12px; color: var(--color-muted); }
+.drill-flag { font-size: 12px; color: #92400E; }
+
+.method { margin-bottom: 16px; padding: 14px 18px; }
+.method summary { font-weight: 600; cursor: pointer; }
+.method ul { margin: 10px 0 0; padding-left: 20px; font-size: 13.5px; display: flex; flex-direction: column; gap: 6px; }
+
+@media (max-width: 1100px) {
+  .analysis-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 /* ---------- Pipeline (Kanban) ---------- */
 
 /* One accent color per status – same hues as the badges and charts. */
@@ -1451,6 +1539,12 @@ body:has(dialog[open]) { overflow: hidden; }
   .upload-row { flex-direction: column; align-items: stretch; }
   .upload-row .btn { margin-top: 0; }
   .doc-hash { display: none; }
+  /* Analyse */
+  .analysis-toolbar .field { flex: 1 1 140px; }
+  .toolbar.analysis-toolbar .select { flex: none; } /* the generic ".toolbar .select" rule would stretch it vertically here */
+  .drill-item { flex-direction: column; }
+  .drill-side { align-items: flex-start; text-align: left; }
+
   /* Verlauf: cards instead of the horizontal timeline */
   .tl-card, .tl-detail, .tl-compare-bar { display: none; }
   .journey-cards { display: flex; flex-direction: column; gap: 12px; }
