@@ -3,7 +3,7 @@
 //
 // Login: the browser sends the login cookie automatically. Requests that change data also need
 // the antiforgery token (header X-CSRF-TOKEN), which is fetched from /api/auth/antiforgery.
-// 401 (not or no longer logged in) → login page.
+// 401 (not or no longer logged in) → start page, which forwards to the login page without demo mode.
 
 export class ApiError extends Error {
   constructor(status, data) {
@@ -30,7 +30,8 @@ export function redirectToLogin() {
   document.querySelector('.main')?.setAttribute('hidden', ''); // never leave private data on screen
   const query = new URLSearchParams({ returnUrl: location.pathname + location.search });
   if (pageUserId) query.set('expired', '1'); // the page was logged in before: the session has ended
-  location.replace(`/login.html?${query}`);
+  // The start page shows the demo to visitors; without demo mode it forwards to login.html at once.
+  location.replace(`/willkommen.html?${query}`);
 }
 
 async function loadCsrfToken() {

@@ -1,3 +1,4 @@
+using BewerbungsPilot.Data;
 using BewerbungsPilot.Logic;
 
 namespace BewerbungsPilot.Endpoints;
@@ -45,11 +46,13 @@ public static class ApplicationEndpoints
     }
 
     // POST /api/applications   (JSON body = ApplicationInput)
-    private static async Task<IResult> Create(ApplicationInput input, ApplicationService service)
+    private static async Task<IResult> Create(ApplicationInput input, ApplicationService service, AppDbContext db, IConfiguration configuration)
     {
         var errors = service.Validate(input);
         if (errors.Count > 0)
             return Results.ValidationProblem(errors, title: "Bitte prüfen Sie Ihre Eingaben.");
+        if (await DemoAccounts.ApplicationLimitProblemAsync(configuration, db) is { } limit)
+            return Results.Problem(title: limit, statusCode: StatusCodes.Status403Forbidden);
 
         var created = await service.CreateAsync(input);
         return Results.Created($"/api/applications/{created.Id}", ApplicationResponse.FromEntity(created, service.Today));

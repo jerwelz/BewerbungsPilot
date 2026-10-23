@@ -4,8 +4,9 @@ A web application for organising your own job applications: applications, status
 interviews, deadlines and a history of every change, in one place. The user interface is in German.
 
 I built it as a portfolio project for my application for an apprenticeship as a
-*Fachinformatiker für Anwendungsentwicklung*. It runs locally. There is no public demo server; the
-[demo mode](#quick-start-demo-with-fictional-data) runs on your own computer.
+*Fachinformatiker für Anwendungsentwicklung*. The [demo mode](#quick-start-demo-with-fictional-data)
+runs on your own computer with one command. A public demo on Fly.io is prepared
+([docs/deployment.md](docs/deployment.md)) but not online yet.
 
 ![Übersicht (dashboard) with fictional demo data](docs/screenshots/01-uebersicht.png)
 
@@ -22,7 +23,7 @@ I built it as a portfolio project for my application for an apprenticeship as a
 | **Analysis** (`Analyse`) | How many applications reached which stage (review, interview, offer) by a chosen cutoff date. |
 | **Locations** (`Standorte`) | Map (Leaflet + OpenStreetMap) of confirmed employer locations, straight-line distance from a starting point, route links. |
 | **Accounts** | Login with ASP.NET Core Identity. Every user sees only their own data. |
-| **Demo mode** | Each visitor gets a separate throwaway account with fictional data (see below). |
+| **Demo mode** | Start page for visitors and a separate throwaway account with fictional data for each of them (see below). |
 
 More screenshots: [Pipeline](docs/screenshots/03-pipeline.png) ·
 [Applications + detail panel](docs/screenshots/08-detail.png) · [Calendar](docs/screenshots/04-kalender.png) ·
@@ -39,7 +40,7 @@ cd BewerbungsPilot
 dotnet run --project src/BewerbungsPilot --launch-profile demo
 ```
 
-Open <http://localhost:5216> and click **Demo starten**. You get your own demo account with
+Open <http://localhost:5216>: the start page explains the app. Click **Demo starten** to get your own demo account with
 12 fictional applications. The data lives in `src/BewerbungsPilot/storage-demo/`, and the account is
 deleted after 4 hours. Uploads and the place search are switched off in the demo.
 
@@ -105,23 +106,35 @@ SQLite file + documents folder in storage/ (outside wwwroot)
 
 Full description, guarantees and limitations: [docs/security.md](docs/security.md).
 
+### Public demo deployment (prepared)
+
+`Dockerfile` + `fly.toml`: one container on Fly.io with one volume for the SQLite file, HTTPS by
+Fly's proxy, demo mode only, deployed manually through the GitHub Actions workflow
+`deploy.yml`. Security for the internet: HTTPS redirect and HSTS, `__Host-` Secure cookies,
+Content-Security-Policy, forwarded headers only from the configured proxy, rate limits, 1 MB request
+limit, German error messages without internals, `/health` for the platform. Details, costs and the
+choice of provider: [docs/deployment.md](docs/deployment.md).
+
 ### Demo mode
 
 Switched on with `Demo:Enabled=true` (the `demo` launch profile does this):
 
+- Visitors who are not logged in see a **start page** (`willkommen.html`) with a short description,
+  screenshots and the buttons „Demo starten“ and „Anmelden“. Without demo mode it forwards straight to the login page.
 - **"Demo starten"** creates a new account without a password (nobody can log in to it with a password), fills it with fictional data and signs the visitor in. Visitors are isolated from each other by the same mechanism as real users.
-- Demo accounts are deleted after `Demo:AccountLifetime` (default 4 h), together with their files. At most `Demo:MaxAccounts` (default 200) exist at the same time.
+- Demo accounts are deleted after `Demo:AccountLifetime` (default 4 h), together with their files (checked every 10 minutes). At most `Demo:MaxAccounts` (default 200) exist at the same time.
+- Limits against abuse: 5 demo starts per IP and hour, 60 changes per visitor and minute, 50 applications and 100 interviews per demo account.
 - Uploads, place search (Nominatim) and registration are switched off.
-- **Two safeguards against starting on real data.** The app refuses to start in demo mode if the data folder is the default `storage/` folder, or if the database contains any account that is not a demo account.
+- **Safeguards against starting on real data.** The app refuses to start in demo mode if the data folder is the default `storage/` folder, or if the database contains any account that is not a demo account. A public instance (not `Development`) additionally needs a real host name and an absolute data folder.
 - When demo mode is off, the demo endpoint does not exist.
 
 ## Tests
 
 ```bash
-dotnet test                     # xUnit: 265 tests
+dotnet test                     # xUnit: 286 tests
 ```
 
-Covered: services (status changes, date rules, duplicates, dashboard, schedule, timeline, analysis, map), document validation (size, file signature, file names), ownership and isolation, the HTTP authorization matrix, CSRF, login, lockout, sessions, migration safety on populated databases, and demo mode.
+Covered: services (status changes, date rules, duplicates, dashboard, schedule, timeline, analysis, map), document validation (size, file signature, file names), ownership and isolation, the HTTP authorization matrix, CSRF, login, lockout, sessions, migration safety on populated databases, demo mode, and the production configuration (HTTPS, headers, proxy, limits, restart persistence).
 
 Browser tests (Playwright, Microsoft Edge, Node.js 24):
 
@@ -131,6 +144,9 @@ npm ci
 npx playwright install msedge   # only if Microsoft Edge is not installed
 node run.mjs                    # all suites; or e.g. node run.mjs m4 m10
 ```
+
+The CI workflow additionally builds the Docker image on Linux and runs `tests/container/smoke.mjs`
+against it (production demo behind a simulated proxy, including a restart).
 
 `run.mjs` builds the app once. It starts a separate instance on port 5299 for every suite, each with its own throwaway data folder (`tests/e2e/.data/`), and never uses `storage/`.
 
@@ -146,23 +162,25 @@ src/BewerbungsPilot/
   wwwroot/              pages, js/, css/, lib/ (third-party libraries)
 tests/BewerbungsPilot.Tests/   xUnit tests
 tests/e2e/                     Playwright browser tests, screenshot script
+tests/container/               smoke test for the Docker image (CI)
 docs/                          security, external services, deployment, portfolio notes, screenshots
+Dockerfile, fly.toml           container image and Fly.io configuration for the public demo
 ```
 
 ## Known limitations
 
-- Built and tested for **local use** and a small number of accounts. It is not deployed publicly yet; see [docs/deployment.md](docs/deployment.md) for the assessment.
+- Built for **local use** and a small number of accounts. The public demo deployment is prepared but not online yet ([docs/deployment.md](docs/deployment.md)).
 - SQLite: one server instance only, not suited for high parallel write load.
 - No e-mail functions: no password reset by e-mail, no e-mail verification, no reminders. Passwords are reset with an operator command.
 - No two-factor authentication, no account deletion in the UI, no admin interface.
 - Documents: PDF only, no versioning (a document can be deleted and uploaded again).
 - The map uses OpenStreetMap tiles, and the place search uses Nominatim. Both are external services ([docs/external-services.md](docs/external-services.md)).
-- The browser tests run with Microsoft Edge. The CI workflow runs on Windows, the only environment where the tests have been executed so far.
+- The browser tests run with Microsoft Edge on Windows. On Linux, only the container smoke test runs (in CI).
 - The interface is German only.
 
 ## Development status
 
-Developed in 10 milestones (Git tags `m1`–`m10`). Main features, account system and demo mode are complete. Possible next steps: public deployment of the demo mode, Content-Security-Policy, e-mail-based password reset.
+Developed in 11 milestones (Git tags `m1`–`m11`). Main features, account system, demo mode and the preparation of the public demo are complete. Possible next steps: going live on Fly.io, e-mail-based password reset.
 
 ## About this project
 

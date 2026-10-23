@@ -17,7 +17,10 @@ const errors = [];
 const browser = await chromium.launch({ channel: 'msedge' });
 
 async function newContext(options = {}) {
-  const context = await browser.newContext({ ...VIEW, ...options });
+  // bypassCSP: Playwright's waitForFunction() evaluates its predicate with eval(), which the app's
+  // Content-Security-Policy (correctly) forbids. These suites test functionality; the CSP
+  // itself is checked without bypass in m11.mjs and in the xUnit tests.
+  const context = await browser.newContext({ ...VIEW, bypassCSP: true, ...options });
   await context.route('https://tile.openstreetmap.org/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: EMPTY_PNG }));
   return context;
 }

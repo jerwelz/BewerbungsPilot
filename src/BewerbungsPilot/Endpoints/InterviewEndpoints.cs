@@ -1,3 +1,4 @@
+using BewerbungsPilot.Data;
 using BewerbungsPilot.Logic;
 
 namespace BewerbungsPilot.Endpoints;
@@ -16,11 +17,14 @@ public static class InterviewEndpoints
     }
 
     // POST /api/applications/5/interviews
-    private static async Task<IResult> Create(int id, InterviewInput input, InterviewService service, ApplicationService applications)
+    private static async Task<IResult> Create(int id, InterviewInput input, InterviewService service, ApplicationService applications,
+        AppDbContext db, IConfiguration configuration)
     {
         var errors = service.Validate(input);
         if (errors.Count > 0)
             return Results.ValidationProblem(errors, title: "Bitte prüfen Sie Ihre Eingaben.");
+        if (await DemoAccounts.InterviewLimitProblemAsync(configuration, db) is { } limit)
+            return Results.Problem(title: limit, statusCode: StatusCodes.Status403Forbidden);
 
         var interview = await service.CreateAsync(id, input);
         return interview is null

@@ -118,6 +118,9 @@ el.originBar.addEventListener('click', (event) => {
 const map = L.map('map', { zoomControl: true }).setView(GERMANY, 6);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom: 19,
+  // The OSM tile policy requires a Referer; the page's own policy ("same-origin") would drop it.
+  // Only the origin is sent (e.g. https://bewerbungspilot.fly.dev/), never the page path.
+  referrerPolicy: 'strict-origin-when-cross-origin',
   attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>-Mitwirkende',
 }).on('tileerror', () => { document.getElementById('tile-notice').hidden = false; })
   .addTo(map);

@@ -52,8 +52,38 @@ public class DemoAccounts
         return await db.Users.CountAsync() == demoUsers;
     }
 
+    // Startup check for a public demo (any environment except Development): AllowedHosts must
+    // name the real host, and the data folder must be an absolute path (a persistent disk such as
+    // /data/demo), never a folder next to the application files. Returns the problem or null.
+    public static string? ProductionConfigurationProblem(IConfiguration configuration, bool isDevelopment)
+    {
+        if (isDevelopment)
+            return null;
+        var hosts = configuration["AllowedHosts"]?.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+        if (hosts.Length == 0 || hosts.Contains("*"))
+            return "Der öffentliche Demo-Modus braucht AllowedHosts mit dem echten Hostnamen (nicht \"*\").";
+        if (!Path.IsPathFullyQualified(configuration["Storage:DataDirectory"] ?? ""))
+            return "Der öffentliche Demo-Modus braucht ein absolutes Datenverzeichnis (z. B. Storage:DataDirectory=/data/demo).";
+        return null;
+    }
+
     public static async Task<bool> IsDemoUserAsync(UserManager<IdentityUser> users, IdentityUser user) =>
         (await users.GetClaimsAsync(user)).Any(c => c.Type == DemoClaimType);
+
+    // Upper limits per demo account, so visitors cannot fill the server's disk. The counts go
+    // through the per-user query filter, i.e. they count only the visitor's own data.
+    public const int MaxApplicationsPerAccount = 50;
+    public const int MaxInterviewsPerAccount = 100;
+
+    public static async Task<string?> ApplicationLimitProblemAsync(IConfiguration configuration, AppDbContext db) =>
+        IsEnabled(configuration) && await db.Applications.CountAsync() >= MaxApplicationsPerAccount
+            ? $"In der Demo sind höchstens {MaxApplicationsPerAccount} Bewerbungen möglich."
+            : null;
+
+    public static async Task<string?> InterviewLimitProblemAsync(IConfiguration configuration, AppDbContext db) =>
+        IsEnabled(configuration) && await db.Interviews.CountAsync() >= MaxInterviewsPerAccount
+            ? $"In der Demo sind höchstens {MaxInterviewsPerAccount} Termine möglich."
+            : null;
 
     // Creates a new demo account with fictional data. Returns null when too many demo
     // accounts are active (the caller answers 429).

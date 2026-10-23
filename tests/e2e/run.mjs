@@ -17,6 +17,7 @@ const BASE = 'http://localhost:5299';
 const SUITE_SETTINGS = {
   'm9-expiry': ['--Auth:SessionLifetime', '00:00:15'],
   m10: ['--Demo:Enabled', 'true'],
+  m11: ['--Demo:Enabled', 'true'],
 };
 
 const all = fs.readdirSync(DIR).filter((f) => /^m\d[\w-]*\.mjs$/.test(f)).map((f) => f.replace('.mjs', ''))

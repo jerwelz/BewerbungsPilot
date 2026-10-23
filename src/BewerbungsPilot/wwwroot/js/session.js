@@ -40,7 +40,7 @@ export async function logout() {
   }
   if (user) removeStorage(originKey(user.id));
   announceSessionChange();
-  location.replace('/login.html');
+  location.replace('/willkommen.html'); // forwards to the login page when demo mode is off
 }
 
 function removeStorage(key) {

@@ -51,7 +51,10 @@ export async function createSession({ email = `e2e-${randomUUID().slice(0, 8)}@e
   await refreshToken(); // the token is bound to the user
 
   async function newContext(browser, options = {}) {
-    const context = await browser.newContext(options);
+  // bypassCSP: Playwright's waitForFunction() evaluates its predicate with eval(), which the app's
+  // Content-Security-Policy (correctly) forbids. These suites test functionality; the CSP
+  // itself is checked without bypass in m11.mjs and in the xUnit tests.
+    const context = await browser.newContext({ bypassCSP: true, ...options });
     await context.addCookies([...jar].map(([name, value]) => ({ name, value, url: BASE })));
     return context;
   }

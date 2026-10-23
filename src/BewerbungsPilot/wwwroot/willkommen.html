@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BewerbungsPilot – Bewerbungen im Blick behalten</title>
+  <meta name="description" content="BewerbungsPilot: Webanwendung zur Verwaltung eigener Bewerbungen – mit Pipeline, Terminen, Dokumenten, Verlauf und Karte. Demo mit fiktiven Daten, ohne Registrierung.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/css/app.css">
+  <script type="module" src="/js/landing.js"></script>
+</head>
+<body class="landing" hidden>
+  <header class="landing-header">
+    <div class="landing-container landing-header-inner">
+      <a class="brand" href="/willkommen.html">
+        <span class="brand-mark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+        </span>
+        <span class="landing-brand-name">BewerbungsPilot</span>
+      </a>
+      <nav class="landing-nav" aria-label="Hauptnavigation">
+        <a href="#funktionen">Funktionen</a>
+        <a href="#technik">Technik</a>
+        <a class="btn btn-secondary btn-sm" href="/login.html" data-login-link>Anmelden</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="landing-hero" aria-labelledby="hero-title">
+      <div class="landing-container landing-hero-inner">
+        <div class="landing-hero-text">
+          <p class="landing-eyebrow">Portfolio-Projekt · Webanwendung</p>
+          <h1 id="hero-title">Alle Bewerbungen an einem Ort – mit Status, Terminen und Verlauf.</h1>
+          <p class="landing-lead">
+            BewerbungsPilot verwaltet eigene Bewerbungen: vom Entwurf über Vorstellungsgespräche bis zur Zu- oder Absage.
+            Jede Statusänderung wird festgehalten, Fristen und Termine erscheinen im Kalender.
+          </p>
+          <div class="landing-notice" id="landing-notice" role="status"></div>
+          <div class="landing-actions">
+            <button class="btn btn-primary landing-cta" type="button" id="demo-start">Demo starten</button>
+            <a class="btn btn-secondary landing-cta" href="/login.html" data-login-link>Anmelden</a>
+          </div>
+          <div class="form-alert" id="demo-alert" role="alert"></div>
+          <p class="landing-hint">
+            Die Demo legt ein eigenes Konto mit <strong>12 fiktiven Bewerbungen</strong> an – ohne Registrierung und ohne
+            E-Mail-Adresse. Es wird nach 4 Stunden automatisch gelöscht.
+          </p>
+        </div>
+        <figure class="landing-shot landing-shot-hero">
+          <img src="/img/01-uebersicht.png" width="1440" height="900"
+            alt="Übersicht von BewerbungsPilot mit Kennzahlen, Diagramm der Bewerbungen pro Monat und anstehenden Terminen (fiktive Daten)">
+        </figure>
+      </div>
+    </section>
+
+    <section class="landing-section" id="funktionen" aria-labelledby="features-title">
+      <div class="landing-container">
+        <h2 class="landing-section-title" id="features-title">Funktionen</h2>
+        <ul class="landing-features">
+          <li>
+            <h3>Bewerbungen</h3>
+            <p>Anlegen, bearbeiten, suchen und filtern. Hinweis auf mögliche Doppelbewerbungen, Detailansicht mit Notizen.</p>
+          </li>
+          <li>
+            <h3>Pipeline</h3>
+            <p>Kanban-Ansicht nach Status mit Drag &amp; Drop – auch per Tastatur bedienbar.</p>
+          </li>
+          <li>
+            <h3>Termine und Fristen</h3>
+            <p>Vorstellungsgespräche (Telefon, Video, vor Ort) und Bewerbungsfristen in Monatsansicht und Agenda.</p>
+          </li>
+          <li>
+            <h3>Dokumente</h3>
+            <p>PDF-Anschreiben und Lebensläufe je Bewerbung, mit Vorschau im Browser.</p>
+          </li>
+          <li>
+            <h3>Verlauf und Analyse</h3>
+            <p>Zeitleiste jeder Bewerbung, Warteschlange offener Antworten und Auswertung bis zu einem Stichtag.</p>
+          </li>
+          <li>
+            <h3>Standorte</h3>
+            <p>Karte der Arbeitgeber (OpenStreetMap) mit Luftlinie zu einem selbst gewählten Startpunkt.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="landing-section landing-section-alt" aria-labelledby="shots-title">
+      <div class="landing-container">
+        <h2 class="landing-section-title" id="shots-title">Einblicke</h2>
+        <div class="landing-gallery">
+          <figure class="landing-shot">
+            <img src="/img/03-pipeline.png" width="1440" height="900" loading="lazy" alt="Pipeline mit Spalten je Status und Bewerbungskarten (fiktive Daten)">
+            <figcaption>Pipeline</figcaption>
+          </figure>
+          <figure class="landing-shot">
+            <img src="/img/08-detail.png" width="1440" height="900" loading="lazy" alt="Bewerbungsliste mit geöffneter Detailansicht (fiktive Daten)">
+            <figcaption>Bewerbungen mit Detailansicht</figcaption>
+          </figure>
+          <figure class="landing-shot">
+            <img src="/img/05-verlauf.png" width="1440" height="900" loading="lazy" alt="Zeitleiste der Statusänderungen einer Bewerbung (fiktive Daten)">
+            <figcaption>Verlauf</figcaption>
+          </figure>
+        </div>
+        <p class="landing-hint">Alle Screenshots zeigen fiktive Beispieldaten aus dem Demo-Modus.</p>
+      </div>
+    </section>
+
+    <section class="landing-section" id="technik" aria-labelledby="tech-title">
+      <div class="landing-container landing-tech">
+        <div>
+          <h2 class="landing-section-title" id="tech-title">Technik</h2>
+          <p>
+            ASP.NET Core 10 (Minimal APIs) und Entity Framework Core mit SQLite; Oberfläche in HTML, CSS und JavaScript
+            ohne Framework. Benutzerkonten mit ASP.NET Core Identity – jedes Konto sieht nur die eigenen Daten.
+            Getestet mit xUnit und Playwright.
+          </p>
+          <p>
+            Entstanden als Portfolio-Projekt für eine Ausbildung zum Fachinformatiker für Anwendungsentwicklung,
+            entwickelt mit Unterstützung eines KI-Assistenten (Claude Code).
+          </p>
+        </div>
+        <div class="landing-tech-card">
+          <h3>Zur Demo</h3>
+          <ul>
+            <li>Jede Besucherin und jeder Besucher erhält ein eigenes, abgeschottetes Demo-Konto.</li>
+            <li>Alle Unternehmen, Personen und Dokumente sind frei erfunden.</li>
+            <li>Hochladen und Ortssuche sind in der Demo abgeschaltet.</li>
+            <li>Keine Registrierung, kein Tracking; nur technisch notwendige Cookies (Anmeldung und Sicherheitsprüfung).</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="landing-footer">
+    <div class="landing-container landing-footer-inner">
+      <span>BewerbungsPilot · Portfolio-Projekt</span>
+      <a href="https://github.com/jerwelz/BewerbungsPilot" rel="noopener">Quellcode auf GitHub</a>
+    </div>
+  </footer>
+</body>
+</html>

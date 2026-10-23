@@ -1,0 +1,14 @@
+# Build context for the Dockerfile: an allow-list. Everything is excluded except the application
+# source and the start script – so storage/ (real personal data) can never be sent to a builder,
+# not even by "fly deploy" from a local working copy.
+*
+!src/BewerbungsPilot/
+!deploy/docker-entrypoint.sh
+
+# Inside the application folder: never data, build output or documents.
+src/BewerbungsPilot/storage*
+src/BewerbungsPilot/bin
+src/BewerbungsPilot/obj
+**/*.db
+**/*.db-*
+**/*.pdf

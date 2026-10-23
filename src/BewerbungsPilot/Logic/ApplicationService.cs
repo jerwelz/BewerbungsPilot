@@ -22,6 +22,8 @@ public class ApplicationService
     public DateOnly Today => DateOnly.FromDateTime(_clock.GetLocalNow().DateTime);
 
     // Returns field name → error messages. An empty dictionary means "valid".
+    public const int MaxNotesLength = 10_000;
+
     // Used for both creating and editing.
     public Dictionary<string, string[]> Validate(ApplicationInput input)
     {
@@ -37,8 +39,16 @@ public class ApplicationService
         else if (input.Position.Trim().Length > 200)
             errors["position"] = ["Die Position darf höchstens 200 Zeichen lang sein."];
 
-        if (!string.IsNullOrWhiteSpace(input.JobUrl) && !IsWebAddress(input.JobUrl.Trim()))
+        if (input.Location?.Trim().Length > 200)
+            errors["location"] = ["Der Ort darf höchstens 200 Zeichen lang sein."];
+
+        if (input.JobUrl?.Trim().Length > 2000)
+            errors["jobUrl"] = ["Die Web-Adresse darf höchstens 2000 Zeichen lang sein."];
+        else if (!string.IsNullOrWhiteSpace(input.JobUrl) && !IsWebAddress(input.JobUrl.Trim()))
             errors["jobUrl"] = ["Bitte geben Sie eine gültige Web-Adresse an (beginnend mit http:// oder https://)."];
+
+        if (input.Notes?.Trim().Length > MaxNotesLength)
+            errors["notes"] = [$"Die Notizen dürfen höchstens {MaxNotesLength} Zeichen lang sein."];
 
         if (input.AppliedOn > Today)
             errors["appliedOn"] = ["Das Bewerbungsdatum darf nicht in der Zukunft liegen."];

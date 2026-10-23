@@ -63,3 +63,50 @@ jobs:
       - name: Run all suites
         working-directory: tests/e2e
         run: node run.mjs
+
+  container:
+    name: Container image (Linux, demo mode)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Build image
+        run: docker build --tag bewerbungspilot:ci .
+
+      - name: Image contains no data
+        run: |
+          docker run --rm --entrypoint sh bewerbungspilot:ci -c \
+            "find / -xdev \( -name '*.db' -o -name '*.db-*' -o -name '*.pdf' -o -name 'storage' -o -name 'storage-*' \) -not -path '/proc/*' -not -path '/usr/*' | tee /tmp/found; test ! -s /tmp/found"
+
+      - name: Start container (like on Fly.io)
+        run: |
+          docker volume create bewerbungspilot-ci
+          docker run --detach --name bewerbungspilot --publish 8080:8080 --volume bewerbungspilot-ci:/data \
+            --env AllowedHosts=localhost --env ASPNETCORE_HTTPS_PORT=443 \
+            --env ReverseProxy__TrustAllProxies=true --env ReverseProxy__ClientIpHeader=Fly-Client-IP \
+            bewerbungspilot:ci
+          for i in $(seq 1 30); do curl --silent --fail http://localhost:8080/health && exit 0; sleep 1; done
+          docker logs bewerbungspilot; exit 1
+
+      - name: Application does not run as root
+        run: |
+          uid=$(docker exec bewerbungspilot awk '/^Uid:/ {print $2}' /proc/1/status)
+          echo "uid=$uid"; test "$uid" != "0"
+
+      - name: Smoke test
+        run: node tests/container/smoke.mjs "$RUNNER_TEMP/cookies.json"
+
+      - name: Restart and check persistence
+        run: |
+          docker restart bewerbungspilot
+          for i in $(seq 1 30); do curl --silent --fail http://localhost:8080/health && break; sleep 1; done
+          node tests/container/smoke.mjs "$RUNNER_TEMP/cookies.json" after-restart
+
+      - name: Container log
+        if: always()
+        run: docker logs bewerbungspilot

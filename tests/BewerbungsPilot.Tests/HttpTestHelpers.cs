@@ -24,23 +24,35 @@ internal static class TestAssemblySetup
 public sealed class AppFactory : WebApplicationFactory<Program>
 {
     private readonly Dictionary<string, string?> _settings;
+    private readonly string _environment;
+    private readonly bool _ownsDataDirectory;
 
-    public AppFactory(Dictionary<string, string?>? settings = null, TimeProvider? clock = null)
+    // dataDirectory: reuse a folder from an earlier instance (restart test); the caller deletes it.
+    public AppFactory(Dictionary<string, string?>? settings = null, TimeProvider? clock = null,
+        string environment = "Development", string? dataDirectory = null)
     {
         _settings = settings ?? [];
+        _environment = environment;
+        _ownsDataDirectory = dataDirectory is null;
         Clock = clock;
+        DataDirectory = dataDirectory ?? NewDataDirectory();
         Directory.CreateDirectory(DataDirectory);
     }
 
-    public string DataDirectory { get; } = Path.Combine(Path.GetTempPath(), "BewerbungsPilot.Tests", "http-" + Guid.NewGuid().ToString("N"));
+    public static string NewDataDirectory() =>
+        Path.Combine(Path.GetTempPath(), "BewerbungsPilot.Tests", "http-" + Guid.NewGuid().ToString("N"));
+
+    public string DataDirectory { get; }
     public TimeProvider? Clock { get; }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment(_environment);
         builder.UseSetting("Storage:DataDirectory", DataDirectory);
         builder.UseSetting("Auth:AllowRegistration", "true");
         builder.UseSetting("Auth:RequestsPerMinute", "1000");
+        builder.UseSetting("Demo:StartsPerHour", "1000");
+        builder.UseSetting("Demo:WritesPerMinute", "1000");
         builder.UseSetting("Geocoding:BaseUrl", "http://127.0.0.1:9/"); // never the real Nominatim
         foreach (var (key, value) in _settings)
             builder.UseSetting(key, value);
@@ -52,7 +64,13 @@ public sealed class AppFactory : WebApplicationFactory<Program>
     {
         base.Dispose(disposing);
         SqliteConnection.ClearAllPools();
-        try { Directory.Delete(DataDirectory, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        if (_ownsDataDirectory)
+            DeleteDataDirectory(DataDirectory);
+    }
+
+    public static void DeleteDataDirectory(string path)
+    {
+        try { Directory.Delete(path, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 }
 
@@ -71,10 +89,17 @@ public sealed class ApiSession
     public const string Password = "ein-sehr-sicheres-passwort";
     private readonly HttpClient _client;
 
-    public ApiSession(AppFactory factory)
+    // baseAddress: e.g. https://demo.example.org for the production tests (HTTPS, host name).
+    public ApiSession(AppFactory factory, string? baseAddress = null)
     {
-        _client = factory.CreateClient(new WebApplicationFactoryClientOptions { HandleCookies = false, AllowAutoRedirect = false });
+        var options = new WebApplicationFactoryClientOptions { HandleCookies = false, AllowAutoRedirect = false };
+        if (baseAddress is not null)
+            options.BaseAddress = new Uri(baseAddress);
+        _client = factory.CreateClient(options);
     }
+
+    // Sent with every request (e.g. the proxy header Fly-Client-IP).
+    public Dictionary<string, string> Headers { get; } = [];
 
     public Dictionary<string, string> Cookies { get; } = [];
     public string? Token { get; set; }
@@ -116,6 +141,8 @@ public sealed class ApiSession
         var request = new HttpRequestMessage(method, url) { Content = content ?? (body is null ? null : JsonContent.Create(body)) };
         if (Cookies.Count > 0)
             request.Headers.Add("Cookie", string.Join("; ", Cookies.Select(c => $"{c.Key}={c.Value}")));
+        foreach (var (name, value) in Headers)
+            request.Headers.Add(name, value);
         var token = csrfToken ?? Token;
         if (!string.IsNullOrEmpty(token))
             request.Headers.Add("X-CSRF-TOKEN", token);

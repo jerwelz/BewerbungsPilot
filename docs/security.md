@@ -93,7 +93,9 @@ Allowed exceptions (everything else fails `SecurityConventionTests`):
 | POST | /api/applications/{id}/documents · /{id}/interviews | owner of the application + guard | yes |
 | PUT/DELETE | /api/interviews/{id} · DELETE /api/documents/{id} | owner + guard | yes |
 | POST | /api/geocode | logged in; cache per user; 403 in demo mode | yes |
-| POST | /api/demo/start | anonymous, rate-limited; **only mapped in demo mode** (§11) | yes |
+| POST | /api/demo/start | anonymous, own rate limit (5 per IP and hour); **only mapped in demo mode** (§11) | yes |
+| GET | /health (not under /api) | anonymous; answers only `Healthy`/`Unhealthy`, reads no user data | – |
+| GET | /willkommen.html and all other static files | anonymous (contain no data; pages load data via the API) | – |
 
 `AuthorizationTests.EveryApiEndpoint_IsInTheAuthorizationMatrix` fails if an endpoint is added
 without being added to the tested matrix.
@@ -110,8 +112,15 @@ without being added to the tested matrix.
 
 - All `/api` responses and all HTML pages: `Cache-Control: no-store` (also keeps pages out of the
   back/forward cache).
-- 401 → login page (`?returnUrl=…&expired=1`); private content is hidden first. `returnUrl` only
-  accepts own paths (no open redirect).
+- 401 → start page `willkommen.html` (`?returnUrl=…&expired=1`), which forwards to the login page
+  at once when demo mode is off; private content is hidden first. `returnUrl` only accepts own paths
+  (no open redirect).
+- Content-Security-Policy on every response: scripts and styles only from the app itself (no inline
+  scripts; inline `style` attributes allowed), images additionally from `tile.openstreetmap.org`,
+  frames only same-origin, no plugins. Plus `Permissions-Policy` (no camera, microphone,
+  geolocation, payment, USB) and `Cross-Origin-Opener-Policy: same-origin`.
+- Map tiles are requested with `referrerpolicy=strict-origin-when-cross-origin`: OpenStreetMap
+  receives the site's origin (required by its tile policy), never the page path.
 - "Back" after logout: pages restored from the cache check the session before showing anything.
 - Login/logout in another tab → all other tabs reload (`localStorage` signal `bewerbungspilot.session`).
 - A stale tab can never save into another account: the antiforgery token is bound to the user,
@@ -177,14 +186,23 @@ M8 version (`git checkout m8`). Documents are never moved or renamed by M9.
 
 ## 8. Before exposing BewerbungsPilot to the internet
 
-Mandatory:
+The public **demo** configuration for Fly.io (`fly.toml`, `Dockerfile`, docs/deployment.md) follows
+this list. Mandatory:
 
 - HTTPS (reverse proxy with TLS or Kestrel certificate) and HSTS (enabled outside Development).
+  Behind a proxy that forwards plain HTTP, set `ASPNETCORE_HTTPS_PORT=443` so the HTTPS redirect
+  works. `/health` is exempt from the redirect (the platform checks it over the internal network).
 - Run with `ASPNETCORE_ENVIRONMENT=Production` (Secure + `__Host-` cookies; plain HTTP logins then
-  fail on purpose).
-- `AllowedHosts` set to the real host name.
+  fail on purpose; errors answer a German ProblemDetails message without internals).
+- `AllowedHosts` set to the real host name. A public demo refuses to start with `AllowedHosts=*`
+  or with a relative data folder (third demo safeguard, §11).
 - Behind a reverse proxy: `ReverseProxy:KnownProxies` set to the proxy address(es) – otherwise
-  rate limiting sees only the proxy IP, and HTTPS is not detected.
+  rate limiting sees only the proxy IP, and HTTPS is not detected. Where the proxy address is not
+  known but the app port is reachable **only** through the host's proxy (Fly.io), use
+  `ReverseProxy:TrustAllProxies=true` together with `ReverseProxy:ClientIpHeader=Fly-Client-IP`
+  (a header the proxy sets to exactly one client address). The app logs a warning at startup.
+  This relies on Fly.io's network design and is verified on the first real deployment.
+- Request bodies are limited to 1 MB (only the PDF upload allows ~12 MB).
 - `Auth:AllowRegistration` = `false` except while creating accounts.
 - On Linux/macOS the Data Protection keys in `keys/` are **not encrypted** (DPAPI exists only on
   Windows): restrict the folder to the service account, or configure a key-encryption certificate.
@@ -195,7 +213,7 @@ Mandatory:
 - Logs: keep `System.Net.Http.HttpClient` at `Warning`; never log request bodies (they contain
   passwords, search texts and starting points).
 
-Recommended: Content-Security-Policy, rate limiting at the proxy, monitoring of failed logins,
+Recommended: rate limiting at the proxy, monitoring of failed logins,
 e-mail-based password reset with e-mail verification once an e-mail provider exists.
 
 ## 9. Known limitations
@@ -219,7 +237,17 @@ e-mail-based password reset with e-mail verification once an e-mail provider exi
   its own logged-in user) plus `m9.mjs` (registration, login, logout, back navigation, CSRF from
   another site, cross-user isolation on every page, document access, account switching, stale tabs)
   and `m9-expiry.mjs` (real 15-second session expiration), `m10.mjs` (demo mode: start, banner on
-  every page, blocked upload, isolation of two visitors).
+  every page, blocked upload, isolation of two visitors), `m11.mjs` (start page, demo start, every
+  page and the PDF preview **without CSP violations**, logout, mobile). m2–m9 run with Playwright's
+  `bypassCSP`, because `waitForFunction` needs `eval`, which the CSP forbids.
+- xUnit `PublicDeploymentTests` (M11): start page and `/health` anonymous, production safeguard,
+  HTTPS redirect (not for `/health`), HSTS/CSP/Permissions-Policy, `__Host-` Secure cookies, unknown
+  host names refused, registration closed, ProblemDetails without internals, forwarded headers only
+  when configured (and per-visitor rate limits behind the proxy), demo start limit, write limit,
+  per-account limits, long texts, cleanup service, data and login surviving a restart.
+- `tests/container/smoke.mjs` (CI job "container", Linux): the Docker image in Production demo mode
+  behind a simulated proxy – no data in the image, not running as root, health, HTTPS redirect,
+  demo start, PDF from the volume, registration closed, 1 MB limit, persistence across a restart.
 - xUnit `DemoTests`: demo endpoint absent when off, isolation of demo visitors, blocked
   registration/upload/place search, no password login, account limit, expiry cleanup with files,
   both startup safeguards, consistency of the seed data.
@@ -231,12 +259,13 @@ e-mail-based password reset with e-mail verification once an e-mail provider exi
 
 | Topic | Implementation |
 |---|---|
-| Entry | `POST /api/demo/start` (anonymous, antiforgery token, auth rate limit). Not mapped when demo mode is off. |
+| Entry | Start page `willkommen.html` → `POST /api/demo/start` (anonymous, antiforgery token, at most `Demo:StartsPerHour` = 5 starts per client IP and hour). Not mapped when demo mode is off. |
 | Accounts | One new account per visitor, `demo-<random>@demo.invalid`, **without password** – it cannot be used with the login form. Marked by the user claim `bewerbungspilot:demo-created-at` (no schema change). Created together with the claim in one transaction. |
 | Isolation | The same query filters and ownership guard as for real accounts; the seed data is written through a context of the demo user. Visitors never see each other's data. |
-| Lifetime | Accounts older than `Demo:AccountLifetime` (default 4 h) are deleted – applications, children, document files, user – whenever the next demo starts. Only accounts with the demo claim are considered. |
-| Limit | At most `Demo:MaxAccounts` (default 200) demo accounts → 429. |
+| Lifetime | Accounts older than `Demo:AccountLifetime` (default 4 h) are deleted – applications, children, document files, user – whenever the next demo starts **and** every `Demo:CleanupInterval` (default 10 min) by `DemoCleanupService`. Only accounts with the demo claim are considered. A deleted account's session ends at its next request (security stamp check). |
+| Limits | At most `Demo:MaxAccounts` (default 200) demo accounts → 429. Per account at most 50 applications and 100 interviews (403); at most `Demo:WritesPerMinute` (default 60) changing API requests per visitor and minute (429). Text lengths are validated, request bodies ≤ 1 MB. Worst case per account: about 1.1 million characters of text plus small history rows – a few MB. 200 accounts filled to the limit could approach the 1 GB volume; normal use stays far below. Watch the volume usage and enlarge it if needed (docs/deployment.md). |
 | Restrictions | Registration off (overrides `Auth:AllowRegistration`), uploads 403, place search 403 (no requests to Nominatim for anonymous visitors). |
-| Safeguards | The app refuses to start in demo mode (1) when the data folder is the default `storage/` folder – checked before anything in it is opened – and (2) when the database contains an account without the demo claim. |
+| Safeguards | The app refuses to start in demo mode (1) when the data folder is the default `storage/` folder – checked before anything in it is opened – (2) when the database contains an account without the demo claim, and (3) outside Development, when `AllowedHosts` is missing or `*`, or the data folder is not an absolute path. |
+| Logging | "Demo-Konto erstellt", refused starts and the number of deleted accounts – no ids, addresses or IPs. |
 
 Run locally: `dotnet run --project src/BewerbungsPilot --launch-profile demo` (data in `storage-demo/`).

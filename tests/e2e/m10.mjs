@@ -15,8 +15,8 @@ async function startDemo() {
   // 401 before login / after logout and the deliberately refused 403 requests are expected.
   page.on('console', (m) => { if (m.type() === 'error' && !/status of (401|403)/.test(m.text())) errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(e.message));
-  await page.goto(BASE + '/');
-  await page.waitForURL(/\/login\.html/);
+  // Since M11 "/" leads to the start page (m11.mjs); this suite uses the demo button on the login page.
+  await page.goto(BASE + '/login.html');
   await page.waitForSelector('#demo-section:not([hidden])');
   await page.click('#demo-start');
   await page.waitForURL((url) => url.pathname === '/' || url.pathname === '/index.html');
@@ -76,8 +76,8 @@ check(await page.locator('tr[data-id]').count() === 11, 'first visitor still see
 
 // ---------- Logout ----------
 await page.click('[data-logout]');
-await page.waitForURL(/\/login\.html/);
-check(true, 'logout leads back to the login page');
+await page.waitForURL(/\/willkommen\.html/);
+check(true, 'logout leads back to the start page');
 
 check(errors.length === 0, `no console errors ${errors.length ? JSON.stringify(errors) : ''}`);
 await browser.close();

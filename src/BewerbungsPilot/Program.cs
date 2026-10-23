@@ -1,4 +1,5 @@
 using System.Net;
+using System.Security.Claims;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using BewerbungsPilot;
@@ -28,6 +29,13 @@ if (demoMode && DemoAccounts.IsDefaultDataDirectory(builder.Environment.ContentR
 {
     Console.Error.WriteLine("Der Demo-Modus braucht ein eigenes Datenverzeichnis (z. B. --Storage:DataDirectory storage-demo). " +
         "Die Anwendung wird nicht gestartet.");
+    return 1;
+}
+// Third demo safeguard: a public demo instance (not Development) needs a real host name and an
+// absolute data folder on a persistent disk (e.g. /data/demo) – nothing next to the app files.
+if (demoMode && DemoAccounts.ProductionConfigurationProblem(builder.Configuration, builder.Environment.IsDevelopment()) is { } problem)
+{
+    Console.Error.WriteLine(problem + " Die Anwendung wird nicht gestartet.");
     return 1;
 }
 Directory.CreateDirectory(dataDirectory);
@@ -92,15 +100,31 @@ builder.Services.AddAntiforgery(options =>
 });
 
 // Login, registration and password change: limited attempts per client IP address.
+// Demo mode: also "Demo starten" per IP and hour, and changes per visitor and minute.
 builder.Services.AddRateLimiter(options =>
 {
     var perMinute = builder.Configuration.GetValue<int?>("Auth:RequestsPerMinute") ?? 10;
+    var demoStartsPerHour = builder.Configuration.GetValue<int?>("Demo:StartsPerHour") ?? 5;
+    var demoWritesPerMinute = builder.Configuration.GetValue<int?>("Demo:WritesPerMinute") ?? 60;
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
     options.AddPolicy(AuthEndpoints.RateLimitPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
         context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
         _ => new FixedWindowRateLimiterOptions { PermitLimit = perMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    options.AddPolicy(DemoEndpoints.RateLimitPolicy, context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = demoStartsPerHour, Window = TimeSpan.FromHours(1), QueueLimit = 0 }));
+    if (demoMode)
+        options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
+            HttpMethods.IsGet(context.Request.Method) || HttpMethods.IsHead(context.Request.Method)
+                || !context.Request.Path.StartsWithSegments("/api")
+                ? RateLimitPartition.GetNoLimiter("read")
+                : RateLimitPartition.GetFixedWindowLimiter(
+                    context.User.FindFirstValue(ClaimTypes.NameIdentifier) ?? context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                    _ => new FixedWindowRateLimiterOptions { PermitLimit = demoWritesPerMinute, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     options.OnRejected = (context, cancellationToken) => new ValueTask(Results.Problem(
-        title: "Zu viele Versuche. Bitte warten Sie eine Minute.",
+        title: context.HttpContext.Request.Path.StartsWithSegments("/api/demo")
+            ? "Von dieser Adresse wurden zu viele Demos gestartet. Bitte versuchen Sie es später erneut."
+            : "Zu viele Anfragen. Bitte warten Sie eine Minute.",
         statusCode: StatusCodes.Status429TooManyRequests).ExecuteAsync(context.HttpContext));
 });
 
@@ -113,13 +137,38 @@ if (OperatingSystem.IsWindows())
     dataProtection.ProtectKeysWithDpapi();
 
 // Behind a reverse proxy (production): trust X-Forwarded-* ONLY from the configured proxy addresses.
+// TrustAllProxies is only for hosts where the app port is reachable solely through the host's
+// own proxy (Fly.io does not document its proxy addresses, see docs/deployment.md).
+// ClientIpHeader: a proxy header with exactly one client address (Fly.io: Fly-Client-IP).
 var knownProxies = builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? [];
+var trustAllProxies = builder.Configuration.GetValue<bool>("ReverseProxy:TrustAllProxies");
+var clientIpHeader = builder.Configuration["ReverseProxy:ClientIpHeader"];
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    if (!string.IsNullOrEmpty(clientIpHeader))
+        options.ForwardedForHeaderName = clientIpHeader;
+    if (trustAllProxies)
+    {
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    }
     foreach (var proxy in knownProxies)
         options.KnownProxies.Add(IPAddress.Parse(proxy));
 });
+
+// Requests are small JSON documents; only the PDF upload raises this limit (DocumentEndpoints).
+builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 1024 * 1024);
+
+// Unexpected errors: a German JSON message, never a stack trace (outside Development).
+builder.Services.AddProblemDetails(options => options.CustomizeProblemDetails = context =>
+{
+    if (context.ProblemDetails.Status == StatusCodes.Status500InternalServerError)
+        context.ProblemDetails.Title = "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.";
+});
+
+// GET /health for the hosting platform: is the app running and the database readable?
+builder.Services.AddHealthChecks().AddCheck<DatabaseHealthCheck>("database");
 
 // --- Services (business logic) ---
 builder.Services.AddSingleton(TimeProvider.System);
@@ -133,6 +182,8 @@ builder.Services.AddScoped<WaitingQueueService>();
 builder.Services.AddScoped<AnalysisService>();
 builder.Services.AddScoped<MapService>();
 builder.Services.AddScoped<DemoAccounts>();
+if (demoMode)
+    builder.Services.AddHostedService<DemoCleanupService>(); // deletes expired demo accounts every few minutes
 
 // --- Place search (Nominatim, only on user request; see NominatimGeocoder.cs) ---
 builder.Services.AddHttpClient<NominatimGeocoder>(client =>
@@ -184,12 +235,17 @@ using (var scope = app.Services.CreateScope())
             "Zuordnen mit: dotnet run --project src/BewerbungsPilot -- claim-legacy-data --email <Konto>", unclaimed);
 }
 
-if (knownProxies.Length > 0)
+if (knownProxies.Length > 0 || trustAllProxies)
     app.UseForwardedHeaders();
+if (trustAllProxies)
+    app.Logger.LogWarning("ReverseProxy:TrustAllProxies ist aktiv: X-Forwarded-* wird von jeder Gegenstelle akzeptiert. " +
+        "Nur zulässig, wenn die Anwendung ausschließlich über den Proxy des Hosters erreichbar ist.");
 if (!app.Environment.IsDevelopment())
 {
+    app.UseExceptionHandler();
     app.UseHsts();
-    app.UseHttpsRedirection();
+    // The platform's health check calls the app directly over HTTP inside the host network.
+    app.UseWhen(context => !context.Request.Path.StartsWithSegments("/health"), branch => branch.UseHttpsRedirection());
 }
 
 // Security headers for every response; private API answers are never stored by the browser
@@ -202,6 +258,12 @@ app.Use(async (context, next) =>
         headers.XContentTypeOptions = "nosniff";
         headers.XFrameOptions = "SAMEORIGIN"; // the PDF preview is a same-origin iframe
         headers["Referrer-Policy"] = "same-origin";
+        // Only our own scripts; map tiles from OpenStreetMap; no plugins, no foreign frames.
+        headers.ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; " +
+            "img-src 'self' data: https://tile.openstreetmap.org; connect-src 'self'; font-src 'self'; object-src 'none'; " +
+            "frame-src 'self'; frame-ancestors 'self'; base-uri 'self'; form-action 'self'";
+        headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=(), payment=(), usb=()";
+        headers["Cross-Origin-Opener-Policy"] = "same-origin";
         if (context.Request.Path.StartsWithSegments("/api"))
         {
             headers.CacheControl = "no-store";
@@ -229,6 +291,7 @@ app.UseAuthorization();
 app.UseRateLimiter();
 
 // --- API ---
+app.MapHealthChecks("/health").AllowAnonymous().DisableRateLimiting();
 app.MapAuthEndpoints();
 if (demoMode)
     app.MapDemoEndpoints(); // not mapped at all outside demo mode

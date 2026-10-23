@@ -43,7 +43,7 @@ Social preview (GitHub → Settings → General → Social preview): crop `01-ue
 > Webanwendung mit ASP.NET Core 10 (Minimal APIs), Entity Framework Core und SQLite; Frontend in
 > HTML/CSS/JavaScript ohne Framework. Funktionen: Bewerbungsverwaltung, Kanban-Pipeline,
 > PDF-Dokumente, Termine, Statusverlauf, Kartenansicht. Benutzerkonten mit ASP.NET Core Identity
-> und Datenisolation über EF-Core-Abfragefilter; 265 xUnit- und 10 Browser-Testsuiten (Playwright).
+> und Datenisolation über EF-Core-Abfragefilter; 286 xUnit-Tests, 11 Browser-Testsuiten (Playwright) und ein Container-Smoke-Test.
 > Entwickelt mit Unterstützung eines KI-Assistenten (Claude Code).
 > GitHub: <link>
 
@@ -79,8 +79,8 @@ Questions you can expect, and where the answer is in the code:
 8. **"How does the demo work without risk for real data?"** Each visitor gets an account without a password,
    isolated by the same filters. It is deleted after 4 hours. Two startup safeguards refuse to run the demo on the
    default data folder or on a database with real accounts.
-9. **"What would you do differently / next?"** Content-Security-Policy, e-mail-based password reset,
-   deployment of the demo, possibly PostgreSQL for several users.
+9. **"What would you do differently / next?"** Going live with the prepared Fly.io deployment,
+   e-mail-based password reset, possibly PostgreSQL for several users.
 10. **"Did you use AI?"** Yes, Claude Code. Be ready to explain *how* you used it (planning,
     reviewing, testing) and to walk through the central files yourself:
     - `Program.cs`
