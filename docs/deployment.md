@@ -1,9 +1,8 @@
 # Deployment of the public demo (Fly.io)
 
-**Status: prepared, not deployed.** M11 contains everything needed (`Dockerfile`, `fly.toml`,
-`.github/workflows/deploy.yml`, production safeguards and tests). A Fly.io account and its first
-deployment have to be set up by the owner of the repository (steps below). The public URL is only
-called "live" once it has been tested.
+**Status: live at <https://bewerbungspilot.fly.dev>** since 2026-10-23 (app `bewerbungspilot`,
+region `fra`, one shared-cpu-1x machine with 512 MB, one 1 GB volume). Deployed with the workflow
+`deploy.yml`; verified with `tests/e2e/public-check.mjs` (results below).
 
 The public instance runs **demo mode only**: every visitor gets an own throwaway account with
 fictional data. It never contains real applications – the personal `storage/` folder is never
@@ -73,13 +72,14 @@ If the app name `bewerbungspilot` is already taken on Fly.io, choose another nam
 ## One-time setup (owner, needs approval and a credit card)
 
 1. Create a Fly.io account and add a payment method: <https://fly.io/app/sign-up>.
-2. Install `flyctl` ([instructions](https://fly.io/docs/flyctl/install/)) and log in: `fly auth login`.
+2. Install `flyctl` ([instructions](https://fly.io/docs/flyctl/install/); Windows:
+   `pwsh -Command "iwr https://fly.io/install.ps1 -useb | iex"`) and log in: `fly auth login`.
 3. In the repository folder:
    ```bash
    fly apps create bewerbungspilot
    fly volumes create bewerbungspilot_data --app bewerbungspilot --region fra --size 1
-   fly tokens create deploy --app bewerbungspilot      # prints a token
-   gh secret set FLY_API_TOKEN --repo jerwelz/BewerbungsPilot   # paste the token
+   # token straight into the GitHub secret – never shown on screen (valid for one year)
+   fly tokens create deploy --app bewerbungspilot --name github-actions --expiry 8760h | gh secret set FLY_API_TOKEN --repo jerwelz/BewerbungsPilot
    ```
 4. GitHub → Actions → **Deploy demo (Fly.io)** → *Run workflow*. The workflow builds the image
    from a clean checkout on Fly's builder, deploys it and checks `https://bewerbungspilot.fly.dev/health`.
@@ -99,6 +99,26 @@ Open `https://bewerbungspilot.fly.dev` and check:
 5. `fly logs` shows "Demo-Konto erstellt" and the TrustAllProxies warning, no errors.
 6. Rate limit check: six "Demo starten" from the same browser within an hour → the sixth gets the
    German "zu viele Demos" message (shows that `Fly-Client-IP` is used, not the proxy address).
+
+### Verification of the first deployment (2026-10-23)
+
+`node tests/e2e/public-check.mjs` (phases `main`, `after-restart`, `rate-limit`) against the live URL, plus
+checks on the machine (`fly ssh console`):
+
+- HTTP → HTTPS (301), HSTS, Content-Security-Policy, `/health` = Healthy, API without login 401,
+  database/keys/config paths not reachable.
+- Two visitors get different demo accounts with 12 fictional applications each; no shared records;
+  a foreign id → 404. Dashboard figures, upcoming dates, charts, all pages, map tiles and markers,
+  PDF preview, logout – no console errors or CSP violations.
+- Registration: 403 by direct API request, page says it is disabled; the login form answers.
+- Cookies: `__Host-`, Secure, HttpOnly, SameSite=Strict.
+- Restart (`fly machine restart`): same login still valid, the visitor's change still there.
+- Rate limit: 6th demo start from one IP → 429 with German message; IPv4 and IPv6 counted
+  separately; forged `Fly-Client-IP` / `X-Forwarded-For` headers do not bypass it.
+- On the machine: the app runs as user `app`; the only database is `/data/demo/bewerbungspilot.db`,
+  created by the app at first start (log: all migrations applied); ~170 MB memory in use.
+
+Note: the per-IP counters live in memory, so a restart resets them.
 
 ## Operation
 

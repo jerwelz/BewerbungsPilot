@@ -45,7 +45,7 @@ Social preview (GitHub → Settings → General → Social preview): crop `01-ue
 > PDF-Dokumente, Termine, Statusverlauf, Kartenansicht. Benutzerkonten mit ASP.NET Core Identity
 > und Datenisolation über EF-Core-Abfragefilter; 286 xUnit-Tests, 11 Browser-Testsuiten (Playwright) und ein Container-Smoke-Test.
 > Entwickelt mit Unterstützung eines KI-Assistenten (Claude Code).
-> GitHub: <link>
+> Demo: https://bewerbungspilot.fly.dev · GitHub: https://github.com/jerwelz/BewerbungsPilot
 
 ## Interview talking points
 
@@ -79,8 +79,8 @@ Questions you can expect, and where the answer is in the code:
 8. **"How does the demo work without risk for real data?"** Each visitor gets an account without a password,
    isolated by the same filters. It is deleted after 4 hours. Two startup safeguards refuse to run the demo on the
    default data folder or on a database with real accounts.
-9. **"What would you do differently / next?"** Going live with the prepared Fly.io deployment,
-   e-mail-based password reset, possibly PostgreSQL for several users.
+9. **"What would you do differently / next?"** E-mail-based password reset, possibly PostgreSQL for
+   several users and more than one server instance.
 10. **"Did you use AI?"** Yes, Claude Code. Be ready to explain *how* you used it (planning,
     reviewing, testing) and to walk through the central files yourself:
     - `Program.cs`
@@ -88,6 +88,10 @@ Questions you can expect, and where the answer is in the code:
     - `ApplicationService.cs`
     - one endpoint file
     - one test file
+
+11. **"How is the demo hosted?"** One container on Fly.io with a volume for SQLite, HTTPS from Fly's
+    proxy, deployed manually through GitHub Actions; see `Dockerfile`, `fly.toml` and
+    `docs/deployment.md`.
 
 Practice suggestion: explain the request path for "change status" from the browser to the database
 without looking at the code. Then explain why `CurrentUserId` must be a property and not a local

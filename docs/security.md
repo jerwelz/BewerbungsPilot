@@ -201,7 +201,9 @@ this list. Mandatory:
   known but the app port is reachable **only** through the host's proxy (Fly.io), use
   `ReverseProxy:TrustAllProxies=true` together with `ReverseProxy:ClientIpHeader=Fly-Client-IP`
   (a header the proxy sets to exactly one client address). The app logs a warning at startup.
-  This relies on Fly.io's network design and is verified on the first real deployment.
+  Checked on the live instance (2026-10-23): the demo-start limit counted IPv4 and IPv6 of the same
+  computer separately, and forged `Fly-Client-IP` / `X-Forwarded-For` headers did not get around it
+  (Fly's proxy overwrites them).
 - Request bodies are limited to 1 MB (only the PDF upload allows ~12 MB).
 - `Auth:AllowRegistration` = `false` except while creating accounts.
 - On Linux/macOS the Data Protection keys in `keys/` are **not encrypted** (DPAPI exists only on

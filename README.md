@@ -4,9 +4,11 @@ A web application for organising your own job applications: applications, status
 interviews, deadlines and a history of every change, in one place. The user interface is in German.
 
 I built it as a portfolio project for my application for an apprenticeship as a
-*Fachinformatiker für Anwendungsentwicklung*. The [demo mode](#quick-start-demo-with-fictional-data)
-runs on your own computer with one command. A public demo on Fly.io is prepared
-([docs/deployment.md](docs/deployment.md)) but not online yet.
+*Fachinformatiker für Anwendungsentwicklung*.
+
+**Live demo: <https://bewerbungspilot.fly.dev>** – click „Demo starten“: you get your own account with
+fictional data, no registration needed. The demo can also run on your own computer with
+[one command](#quick-start-demo-with-fictional-data).
 
 ![Übersicht (dashboard) with fictional demo data](docs/screenshots/01-uebersicht.png)
 
@@ -106,9 +108,9 @@ SQLite file + documents folder in storage/ (outside wwwroot)
 
 Full description, guarantees and limitations: [docs/security.md](docs/security.md).
 
-### Public demo deployment (prepared)
+### Public demo deployment
 
-`Dockerfile` + `fly.toml`: one container on Fly.io with one volume for the SQLite file, HTTPS by
+Live at <https://bewerbungspilot.fly.dev>. `Dockerfile` + `fly.toml`: one container on Fly.io (Frankfurt) with one volume for the SQLite file, HTTPS by
 Fly's proxy, demo mode only, deployed manually through the GitHub Actions workflow
 `deploy.yml`. Security for the internet: HTTPS redirect and HSTS, `__Host-` Secure cookies,
 Content-Security-Policy, forwarded headers only from the configured proxy, rate limits, 1 MB request
@@ -169,7 +171,7 @@ Dockerfile, fly.toml           container image and Fly.io configuration for the 
 
 ## Known limitations
 
-- Built for **local use** and a small number of accounts. The public demo deployment is prepared but not online yet ([docs/deployment.md](docs/deployment.md)).
+- Built for **local use** and a small number of accounts. The public instance runs demo mode only ([docs/deployment.md](docs/deployment.md)); it stops when idle, so the first request after a pause takes a few seconds.
 - SQLite: one server instance only, not suited for high parallel write load.
 - No e-mail functions: no password reset by e-mail, no e-mail verification, no reminders. Passwords are reset with an operator command.
 - No two-factor authentication, no account deletion in the UI, no admin interface.
@@ -180,7 +182,7 @@ Dockerfile, fly.toml           container image and Fly.io configuration for the 
 
 ## Development status
 
-Developed in 11 milestones (Git tags `m1`–`m11`). Main features, account system, demo mode and the preparation of the public demo are complete. Possible next steps: going live on Fly.io, e-mail-based password reset.
+Developed in 11 milestones (Git tags `m1`–`m11`). Main features, account system, demo mode and the public demo on Fly.io are complete. Possible next steps: e-mail-based password reset, PostgreSQL for more users.
 
 ## About this project
 
