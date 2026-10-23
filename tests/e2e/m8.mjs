@@ -170,6 +170,7 @@ await page.click('.place-dialog [data-close]');
 // Remove origin
 await page.click('[data-origin-remove]');
 await page.waitForSelector('.origin-text:has-text("Kein Startpunkt")');
+await page.waitForFunction(() => !document.querySelector('#place-list').textContent.includes('Luftlinie'));
 check(!(await page.textContent('#place-list')).includes('Luftlinie') && await page.isDisabled('#map-sort option[value="distance"]'), 'origin removed: no distances, distance sort disabled');
 check(await page.evaluate((key) => localStorage.getItem(key), ORIGIN_KEY) === null, 'origin removed from localStorage');
 
