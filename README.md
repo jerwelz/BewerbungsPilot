@@ -34,7 +34,7 @@ More screenshots: [Pipeline](docs/screenshots/03-pipeline.png) ·
 Requirements: [.NET SDK 10](https://dotnet.microsoft.com/download) and Git.
 
 ```bash
-git clone <repository-url> BewerbungsPilot
+git clone https://github.com/jerwelz/BewerbungsPilot.git
 cd BewerbungsPilot
 dotnet run --project src/BewerbungsPilot --launch-profile demo
 ```
