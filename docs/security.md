@@ -92,7 +92,8 @@ Allowed exceptions (everything else fails `SecurityConventionTests`):
 | PUT/PATCH/DELETE | /api/applications/{id} · /{id}/status · /{id}/map-location | owner + guard | yes |
 | POST | /api/applications/{id}/documents · /{id}/interviews | owner of the application + guard | yes |
 | PUT/DELETE | /api/interviews/{id} · DELETE /api/documents/{id} | owner + guard | yes |
-| POST | /api/geocode | logged in; cache per user | yes |
+| POST | /api/geocode | logged in; cache per user; 403 in demo mode | yes |
+| POST | /api/demo/start | anonymous, rate-limited; **only mapped in demo mode** (§11) | yes |
 
 `AuthorizationTests.EveryApiEndpoint_IsInTheAuthorizationMatrix` fails if an endpoint is added
 without being added to the tested matrix.
@@ -185,6 +186,9 @@ Mandatory:
 - Behind a reverse proxy: `ReverseProxy:KnownProxies` set to the proxy address(es) – otherwise
   rate limiting sees only the proxy IP, and HTTPS is not detected.
 - `Auth:AllowRegistration` = `false` except while creating accounts.
+- On Linux/macOS the Data Protection keys in `keys/` are **not encrypted** (DPAPI exists only on
+  Windows): restrict the folder to the service account, or configure a key-encryption certificate.
+- A persistent disk for the data folder (container file systems are often lost on restart/redeploy).
 - `storage/` (database, documents, keys, backups) readable/writable only by the service account,
   outside any web root; regular off-machine backups of the database (`VACUUM INTO`), `documents/`
   and `keys/`.
@@ -214,4 +218,25 @@ e-mail-based password reset with e-mail verification once an e-mail provider exi
 - Browser (`tests/e2e`, `npm install` then `node run.mjs`): the M2–M8 regression suites (each as
   its own logged-in user) plus `m9.mjs` (registration, login, logout, back navigation, CSRF from
   another site, cross-user isolation on every page, document access, account switching, stale tabs)
-  and `m9-expiry.mjs` (real 15-second session expiration).
+  and `m9-expiry.mjs` (real 15-second session expiration), `m10.mjs` (demo mode: start, banner on
+  every page, blocked upload, isolation of two visitors).
+- xUnit `DemoTests`: demo endpoint absent when off, isolation of demo visitors, blocked
+  registration/upload/place search, no password login, account limit, expiry cleanup with files,
+  both startup safeguards, consistency of the seed data.
+
+## 11. Demo mode
+
+`Demo:Enabled=true` turns the instance into a demonstration with fictional data
+(`Logic/DemoAccounts.cs`, `Logic/DemoSeeder.cs`, `Endpoints/DemoEndpoints.cs`).
+
+| Topic | Implementation |
+|---|---|
+| Entry | `POST /api/demo/start` (anonymous, antiforgery token, auth rate limit). Not mapped when demo mode is off. |
+| Accounts | One new account per visitor, `demo-<random>@demo.invalid`, **without password** – it cannot be used with the login form. Marked by the user claim `bewerbungspilot:demo-created-at` (no schema change). Created together with the claim in one transaction. |
+| Isolation | The same query filters and ownership guard as for real accounts; the seed data is written through a context of the demo user. Visitors never see each other's data. |
+| Lifetime | Accounts older than `Demo:AccountLifetime` (default 4 h) are deleted – applications, children, document files, user – whenever the next demo starts. Only accounts with the demo claim are considered. |
+| Limit | At most `Demo:MaxAccounts` (default 200) demo accounts → 429. |
+| Restrictions | Registration off (overrides `Auth:AllowRegistration`), uploads 403, place search 403 (no requests to Nominatim for anonymous visitors). |
+| Safeguards | The app refuses to start in demo mode (1) when the data folder is the default `storage/` folder – checked before anything in it is opened – and (2) when the database contains an account without the demo claim. |
+
+Run locally: `dotnet run --project src/BewerbungsPilot --launch-profile demo` (data in `storage-demo/`).

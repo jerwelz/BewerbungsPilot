@@ -227,9 +227,22 @@ export function renderSidebar(activeKey) {
   sidebar.querySelector('[data-logout]').addEventListener('click', logout);
   requireUser().then((user) => {
     const email = sidebar.querySelector('[data-user-email]');
-    email.textContent = user.email;
-    email.title = user.email;
+    email.textContent = user.isDemo ? 'Demo-Konto' : user.email;
+    email.title = email.textContent;
+    if (user.isDemo) showDemoBanner(sidebar);
   }).catch(() => { /* not logged in: requireUser has already redirected */ });
+}
+
+// Demo accounts: a banner on every page; no password to change.
+function showDemoBanner(sidebar) {
+  sidebar.querySelector('[data-change-password]').remove();
+  const main = document.querySelector('.main');
+  if (!main || main.querySelector('.demo-banner')) return;
+  const banner = document.createElement('p');
+  banner.className = 'demo-banner';
+  banner.setAttribute('role', 'note');
+  banner.textContent = 'Demo-Modus – alle Unternehmen, Personen und Dokumente sind fiktiv. Das Demo-Konto wird nach einigen Stunden gelöscht; Hochladen und Ortssuche sind deaktiviert.';
+  main.prepend(banner);
 }
 
 // ---------- Toasts ----------

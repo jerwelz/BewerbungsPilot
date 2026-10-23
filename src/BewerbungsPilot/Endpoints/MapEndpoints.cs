@@ -39,8 +39,13 @@ public static class MapEndpoints
     }
 
     // POST /api/geocode   body: { "query": "Hafenstraße 12, Hamburg" } – sent to Nominatim
-    private static async Task<IResult> Geocode(GeocodeQuery input, NominatimGeocoder geocoder, CancellationToken cancellationToken)
+    private static async Task<IResult> Geocode(GeocodeQuery input, NominatimGeocoder geocoder, IConfiguration configuration, CancellationToken cancellationToken)
     {
+        // Public demo: no requests to Nominatim on behalf of anonymous visitors (usage policy).
+        if (DemoAccounts.IsEnabled(configuration))
+            return Results.Problem(title: "In der Demo ist die Ortssuche deaktiviert. Sie können die Koordinaten von Hand eingeben.",
+                statusCode: StatusCodes.Status403Forbidden);
+
         if (NominatimGeocoder.ValidateQuery(input.Query) is { } error)
             return Results.ValidationProblem(new Dictionary<string, string[]> { ["query"] = [error] },
                 title: "Bitte prüfen Sie die Suche.");

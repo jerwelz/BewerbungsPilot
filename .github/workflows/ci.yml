@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and xUnit tests
+    # Windows: the only environment the tests have been run on so far (Data Protection uses DPAPI there).
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --logger "trx;LogFileName=results.trx" --logger "console;verbosity=normal" --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xunit-results
+          path: TestResults
+
+  e2e:
+    name: Browser tests (Playwright, Edge)
+    needs: test
+    runs-on: windows-latest # Microsoft Edge is preinstalled
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24 # same major version as local runs; node:sqlite is used by m6/m7
+          cache: npm
+          cache-dependency-path: tests/e2e/package-lock.json
+
+      - name: Install
+        working-directory: tests/e2e
+        run: npm ci
+
+      - name: Run all suites
+        working-directory: tests/e2e
+        run: node run.mjs

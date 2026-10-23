@@ -1812,3 +1812,10 @@ body:has(dialog[open]) { overflow: hidden; }
 .auth-notice { padding: 10px 12px; border-radius: var(--radius-md); background: var(--color-primary-soft); color: #1E40AF; border: 1px solid #BFDBFE; font-size: 13.5px; }
 .auth-notice:empty { display: none; }
 .auth-footer { margin: 0; font-size: 13.5px; color: var(--color-muted); text-align: center; }
+
+/* ---------- Demo mode ---------- */
+.auth-demo { display: flex; flex-direction: column; gap: 10px; padding-top: 18px; border-top: 1px solid var(--color-border); }
+.auth-demo .btn { width: 100%; justify-content: center; }
+.auth-demo-title { margin: 0; font-size: 15px; font-weight: 600; }
+.auth-demo-text { margin: 0; color: var(--color-muted); font-size: 13.5px; }
+.demo-banner { margin: 0 0 20px; padding: 10px 14px; border-radius: var(--radius-md); background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; font-size: 13.5px; }

@@ -21,8 +21,9 @@ async function start() {
     notice.textContent = 'Ihre Sitzung ist abgelaufen. Bitte melden Sie sich erneut an.';
 
   try {
-    const { allowRegistration } = await api.getAuthOptions();
+    const { allowRegistration, demoEnabled } = await api.getAuthOptions();
     if (mode === 'login') document.getElementById('register-link').hidden = !allowRegistration;
+    if (mode === 'login') document.getElementById('demo-section').hidden = !demoEnabled;
     if (mode === 'register' && !allowRegistration) {
       notice.textContent = 'Die Registrierung ist deaktiviert. Bitte wenden Sie sich an die Person, die BewerbungsPilot betreibt.';
       form.hidden = true;
@@ -52,6 +53,22 @@ form.addEventListener('submit', async (event) => {
     submit.disabled = false;
     form.elements.password.value = '';
     showFieldErrors(form, error, 'a-');
+  }
+});
+
+// Demo mode: a fresh demo account with fictional data, then on to the dashboard.
+document.getElementById('demo-start')?.addEventListener('click', async (event) => {
+  const button = event.currentTarget;
+  const alert = document.getElementById('demo-alert');
+  alert.textContent = '';
+  button.disabled = true;
+  try {
+    await api.startDemo();
+    announceSessionChange();
+    location.replace('/');
+  } catch (error) {
+    button.disabled = false;
+    alert.textContent = error.data?.title ?? 'Die Demo konnte nicht gestartet werden.';
   }
 });
 

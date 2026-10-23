@@ -8,6 +8,15 @@ TestResults/
 
 # Private data: real database and documents. Never commit.
 storage/
+storage-*/
 *.db
 *.db-shm
 *.db-wal
+
+# Never commit documents, secrets or local settings
+*.pdf
+.env
+.env.*
+secrets.json
+appsettings.*.local.json
+*.trx

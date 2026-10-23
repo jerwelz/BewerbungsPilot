@@ -34,8 +34,12 @@ public static class DocumentEndpoints
     }
 
     // POST /api/applications/5/documents   (multipart/form-data: file, category)
-    private static async Task<IResult> Upload(int id, HttpRequest request, DocumentService documents)
+    private static async Task<IResult> Upload(int id, HttpRequest request, DocumentService documents, IConfiguration configuration)
     {
+        // Public demo: no uploads, so visitors cannot store their own files on the server.
+        if (DemoAccounts.IsEnabled(configuration))
+            return Results.Problem(title: "In der Demo ist das Hochladen deaktiviert.", statusCode: StatusCodes.Status403Forbidden);
+
         // Simple protection against other websites sending uploads to this local app:
         // browsers mark cross-site requests in the Sec-Fetch-Site header.
         var fetchSite = request.Headers["Sec-Fetch-Site"].ToString();

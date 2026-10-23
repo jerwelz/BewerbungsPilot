@@ -1,4 +1,5 @@
 using System.Net.Mail;
+using BewerbungsPilot.Logic;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
@@ -29,7 +30,7 @@ public static class AuthEndpoints
     private static async Task<IResult> Me(HttpContext context, UserManager<IdentityUser> users)
     {
         var user = context.User.Identity?.IsAuthenticated == true ? await users.GetUserAsync(context.User) : null;
-        return user is null ? NotLoggedIn() : Results.Ok(new UserResponse(user.Id, user.Email!));
+        return user is null ? NotLoggedIn() : Results.Ok(new UserResponse(user.Id, user.Email!, await DemoAccounts.IsDemoUserAsync(users, user)));
     }
 
     // GET /api/auth/antiforgery → sets the antiforgery cookie, returns the matching request token.
@@ -37,7 +38,8 @@ public static class AuthEndpoints
     private static IResult GetAntiforgeryToken(HttpContext context, IAntiforgery antiforgery, IConfiguration configuration, UserManager<IdentityUser> users)
     {
         var tokens = antiforgery.GetAndStoreTokens(context);
-        return Results.Ok(new AntiforgeryResponse(tokens.RequestToken!, AllowRegistration(configuration), users.GetUserId(context.User)));
+        return Results.Ok(new AntiforgeryResponse(tokens.RequestToken!, AllowRegistration(configuration), users.GetUserId(context.User),
+            DemoAccounts.IsEnabled(configuration)));
     }
 
     // POST /api/auth/register
@@ -133,8 +135,9 @@ public static class AuthEndpoints
     private static readonly Lazy<string> DummyHash =
         new(() => new PasswordHasher<IdentityUser>().HashPassword(DummyUser, Guid.NewGuid().ToString()));
 
+    // Never in demo mode: the demo database must only contain demo accounts.
     private static bool AllowRegistration(IConfiguration configuration) =>
-        configuration.GetValue<bool>("Auth:AllowRegistration");
+        configuration.GetValue<bool>("Auth:AllowRegistration") && !DemoAccounts.IsEnabled(configuration);
 
     private static bool IsEmail(string email) =>
         email.Length is > 0 and <= 256 && MailAddress.TryCreate(email, out var address)

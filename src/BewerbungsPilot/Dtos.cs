@@ -233,6 +233,7 @@ public record LoginInput(string? Email, string? Password, bool RememberMe);
 // POST /api/auth/password
 public record PasswordChangeInput(string? CurrentPassword, string? NewPassword);
 
-public record UserResponse(string Id, string Email);
+// IsDemo: a throwaway account of the demo mode (DemoAccounts.cs) – the pages show a banner.
+public record UserResponse(string Id, string Email, bool IsDemo = false);
 // GET /api/auth/antiforgery → token for the X-CSRF-TOKEN header, and for whom it is valid
-public record AntiforgeryResponse(string Token, bool AllowRegistration, string? UserId);
+public record AntiforgeryResponse(string Token, bool AllowRegistration, string? UserId, bool DemoEnabled);

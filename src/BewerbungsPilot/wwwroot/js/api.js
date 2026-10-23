@@ -106,9 +106,9 @@ async function checkSession() {
 
 export const api = {
   // ---------- Account ----------
-  me: () => request('GET', '/api/auth/me'), // → { id, email }; redirects to the login page if needed
+  me: () => request('GET', '/api/auth/me'), // → { id, email, isDemo }; redirects to the login page if needed
   checkSession,
-  getAuthOptions: () => loadCsrfToken(), // → { token, allowRegistration }
+  getAuthOptions: () => loadCsrfToken(), // → { token, allowRegistration, demoEnabled }
   login: async (input) => { // { email, password, rememberMe }
     const user = await request('POST', '/api/auth/login', input, { redirectOn401: false });
     csrfToken = null; // the token is bound to the user
@@ -125,6 +125,11 @@ export const api = {
     } finally {
       csrfToken = null;
     }
+  },
+  startDemo: async () => { // demo mode only: new demo account with fictional data, logged in
+    const user = await request('POST', '/api/demo/start', undefined, { redirectOn401: false });
+    csrfToken = null;
+    return user;
   },
   changePassword: (input) => request('POST', '/api/auth/password', input), // { currentPassword, newPassword }
 

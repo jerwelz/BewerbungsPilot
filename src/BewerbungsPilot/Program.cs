@@ -20,6 +20,16 @@ var command = args.Length > 0 && AdminCommands.Names.Contains(args[0]) ? args[0]
 // --- Database: one SQLite file inside the (git-ignored) storage directory ---
 var dataDirectory = Path.Combine(builder.Environment.ContentRootPath,
     builder.Configuration["Storage:DataDirectory"] ?? "storage");
+
+// Demo mode (fictional data for visitors, see DemoAccounts.cs) never runs on the default data
+// folder – that is where the real data lives. Checked before anything in it is opened.
+var demoMode = DemoAccounts.IsEnabled(builder.Configuration);
+if (demoMode && DemoAccounts.IsDefaultDataDirectory(builder.Environment.ContentRootPath, dataDirectory))
+{
+    Console.Error.WriteLine("Der Demo-Modus braucht ein eigenes Datenverzeichnis (z. B. --Storage:DataDirectory storage-demo). " +
+        "Die Anwendung wird nicht gestartet.");
+    return 1;
+}
 Directory.CreateDirectory(dataDirectory);
 var databasePath = Path.Combine(dataDirectory, "bewerbungspilot.db");
 
@@ -122,6 +132,7 @@ builder.Services.AddScoped<TimelineService>();
 builder.Services.AddScoped<WaitingQueueService>();
 builder.Services.AddScoped<AnalysisService>();
 builder.Services.AddScoped<MapService>();
+builder.Services.AddScoped<DemoAccounts>();
 
 // --- Place search (Nominatim, only on user request; see NominatimGeocoder.cs) ---
 builder.Services.AddHttpClient<NominatimGeocoder>(client =>
@@ -156,6 +167,14 @@ using (var scope = app.Services.CreateScope())
                 "Die Datenbank {Path} muss migriert werden. Die Anwendung wird nicht gestartet. " +
                 "Bitte ausführen: dotnet run --project src/BewerbungsPilot -- migrate", databasePath);
             return 1;
+    }
+
+    // Second demo safeguard: a demo database contains demo accounts only.
+    if (demoMode && !await DemoAccounts.ContainsOnlyDemoAccountsAsync(db))
+    {
+        app.Logger.LogCritical(
+            "Die Datenbank {Path} enthält echte Benutzerkonten. Der Demo-Modus wird darauf nicht gestartet.", databasePath);
+        return 1;
     }
 
     var unclaimed = await LegacyDataClaim.CountUnclaimedAsync(db);
@@ -211,6 +230,8 @@ app.UseRateLimiter();
 
 // --- API ---
 app.MapAuthEndpoints();
+if (demoMode)
+    app.MapDemoEndpoints(); // not mapped at all outside demo mode
 
 // All application endpoints: login required, CSRF check, foreign data → 404 (ApiFilters.cs).
 var api = app.MapGroup("").RequireAuthorization().AddEndpointFilter<ApiProtectionFilter>();
